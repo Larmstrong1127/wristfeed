@@ -10,6 +10,10 @@ object Display {
     const val MAX_MESSAGE = 60
     const val MAX_ROWS = 3
 
+    /** Complication SHORT_TEXT text and title limits (SPEC "Complications"). */
+    const val MAX_SHORT_TEXT = 7
+    const val MAX_SHORT_TITLE = 7
+
     /**
      * At most [max] characters (code points) are shown; longer text keeps max-1 and adds the
      * ellipsis, so the result is never longer than [max].
@@ -47,22 +51,29 @@ object Display {
 
     fun message(feed: Feed): String? = feed.message?.let { truncate(it, MAX_MESSAGE) }
 
-    /** Integral numbers print without ".0" ("1/5"); others like Python's "%g" (6 significant digits). */
+    /**
+     * SPEC "Number display": whole and |d| < 1e15 -> plain integer ("1/5"); otherwise 6 significant
+     * digits (HALF_UP on the exact binary value), trailing zeros stripped, plain notation.
+     * Vectors: conformance/display/numbers.json (shared with the Python reference).
+     */
     fun formatNumber(d: Double): String =
         if (d == Math.floor(d) && Math.abs(d) < 1e15) d.toLong().toString()
-        else java.math.BigDecimal(d).round(java.math.MathContext(6)).stripTrailingZeros().toPlainString()
+        else java.math.BigDecimal(d).round(java.math.MathContext(6, java.math.RoundingMode.HALF_UP)).stripTrailingZeros().toPlainString()
 
     fun progressText(p: Progress) = "${formatNumber(p.value)}/${formatNumber(p.max)}"
 
     /** SHORT_TEXT text: first row's value (stats), value/max (progress), title (message). */
-    fun shortText(feed: Feed): String = when (feed.kind) {
-        Kind.STATS -> feed.rows.firstOrNull()?.let { truncate(it.value, MAX_VALUE) } ?: title(feed)
-        Kind.PROGRESS -> feed.progress?.let { progressText(it) } ?: title(feed)
-        Kind.MESSAGE -> title(feed)
-    }
+    fun shortText(feed: Feed): String = truncate(
+        when (feed.kind) {
+            Kind.STATS -> feed.rows.firstOrNull()?.value ?: feed.title
+            Kind.PROGRESS -> feed.progress?.let { progressText(it) } ?: feed.title
+            Kind.MESSAGE -> feed.title
+        },
+        MAX_SHORT_TEXT,
+    )
 
-    /** SHORT_TEXT label: the title. */
-    fun shortTitle(feed: Feed): String = title(feed)
+    /** SHORT_TEXT label: the title, cut to 7 characters. */
+    fun shortTitle(feed: Feed): String = truncate(feed.title, MAX_SHORT_TITLE)
 
     /**
      * LONG_TEXT: "title: row1 \u00B7 row2" (each row "label value") or the message.

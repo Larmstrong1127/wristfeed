@@ -29,15 +29,15 @@ A feed is one JSON document served over HTTPS at a stable URL, for example a raw
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
-| `wristfeed` | integer | yes | Format version. The app shows "unsupported feed version" for any value it doesn't know (v1 app: only `1`). |
+| `wristfeed` | integer | yes | Format version; must be an integer in -2^53..2^53 (anything else, including 1.0 or "1", is malformed). The app shows "unsupported feed version" for any value it doesn't know (v1 app: only `1`). |
 | `title` | string | yes | Shown at the top of the tile. The app shows at most 24 characters, cut with "…". |
-| `updated` | string, RFC 3339 UTC (`Z` or offset) | yes | When the publisher made the data. |
+| `updated` | string, RFC 3339 UTC (`Z` or offset) | yes | When the publisher made the data. Form: `YYYY-MM-DDTHH:MM:SS`, optional `.` plus 1 to 9 fraction digits, then `Z` or `±HH:MM` with minutes < 60 and the offset at most 18:00. Anything else is malformed. |
 | `status` | `"ok" \| "warn" \| "bad" \| "idle"` | no, default `"idle"` | The overall state. It colors the tile's accent: ok green, warn amber, bad red, idle grey. |
 | `kind` | `"stats" \| "progress" \| "message"` | no, default `"stats"` | Which layout to use. |
 | `rows` | array of `{label, value, status?}` | for `stats` | Up to 3 rows are shown (the rest ignored). label ≤ 12 characters and value ≤ 10 characters shown, cut with "…". A row's `status` colors its value. |
 | `progress` | `{label, value, max}` with numbers, `max` > 0 | for `progress` | A ring with "value/max". Also feeds the RANGED_VALUE complication. Value is clamped to 0..max. |
 | `message` | string or null | for `message` | One short line (≤ 60 characters shown), for "all quiet"-type feeds. |
-| `stale_after_minutes` | integer ≥ 1 | no, default 360 | After this long since `updated`, the tile shows "Old data". |
+| `stale_after_minutes` | integer 1..525600 (one year) | no, default 360; out of range or not an integer falls back to 360 | After this long since `updated`, the tile shows "Old data". |
 | `tap_url` | string (https URL) or null | no | Tapping the tile opens it on the phone (via the companion's remote-open intent if available; otherwise nothing happens). |
 
 Rules:
@@ -46,6 +46,8 @@ Rules:
 3. **Wrong-typed or out-of-range values** (an unknown `status`, a non-number progress value, `max` ≤ 0) make that part fall back to its default; only a broken required field makes the whole feed malformed.
 4. **Clock-skew guard** (credit: Wrist-Usage): if `updated` is more than 2 minutes after the time the watch downloaded the feed, the app uses the download time instead.
 5. **Size:** the app reads at most 64 KB; anything larger is malformed.
+6. **Strict JSON:** the body must be RFC 8259 JSON. `NaN`, `Infinity` and `-Infinity` literals make it malformed. JSON nesting deeper than 32 levels (the root object is level 1) is malformed.
+7. **Numbers:** an integer literal that does not fit a signed 64-bit integer is read as a floating-point number. A number whose magnitude exceeds 1e308 (or overflows to infinity) is "not a number" for every field (so a progress `value` of `1e400` falls back).
 
 ## Watch states
 
@@ -66,16 +68,20 @@ If a fetch fails but an earlier good copy exists, the app keeps showing that cop
 
 | Type | Content |
 |---|---|
-| SHORT_TEXT | The first row's value (stats), "value/max" (progress) or the title (message); title as the label. |
+| SHORT_TEXT | The first row's value (stats), "value/max" (progress) or the title (message), cut to 7 characters; title as the label, cut to 7 characters (cut with "…"). |
 | LONG_TEXT | "title: row1 · row2" or the message. |
 | RANGED_VALUE | `progress` when present; otherwise not offered. |
 
+## Number display
+
+Progress numbers are shown by one rule (vectors in `conformance/display/numbers.json`): a whole number with magnitude below 1e15 prints as a plain integer (`5`, `-3`, `0`). Any other number is rounded to 6 significant digits (round half up, applied to the exact binary value), trailing zeros removed, and printed in plain decimal notation, never with an exponent (`2.5`, `1234570`, `0.00000123457`).
+
 ## Refresh
 
-The app asks Android to refresh every 30 minutes (WorkManager periodic work, network required), and again when the tile becomes visible if the last fetch is more than 15 minutes old. Android may delay background work; the footer age always tells the truth.
+The app asks Android to refresh every 30 minutes (WorkManager periodic work, network required), and again when the tile becomes visible if the last fetch is more than 15 minutes old. A manual or tile-triggered refresh is one-shot work with its own unique name and `KEEP` policy, so at most one one-shot refresh is queued at a time; it never replaces the periodic work. Android may delay background work; the footer age always tells the truth.
 
 ## Publisher CLI (reference implementation in `publisher/`)
 
 - `wristfeed validate FILE`: exits 0 on a valid v1 feed, otherwise prints each problem and exits 1.
 - `wristfeed build --title T [--status S] [--kind K] [--row "Label=Value[:status]"]... [--progress "Label=V/MAX"] [--message M] [--stale-after N] [--tap-url U] [--out FILE]`: writes a valid feed with `updated` set to now.
-- `wristfeed publish FILE --gist ID`: updates an existing gist's file through `gh` (never creates one silently; `--create` must be explicit and prints the raw URL).
+- `wristfeed publish FILE --gist ID`: updates an existing gist's file through `gh` (never creates one silently; `--create` must be explicit, sends the file on stdin under `--filename`, and prints the raw URL when the gist owner is known, otherwise the gist URL with a hint to click Raw).

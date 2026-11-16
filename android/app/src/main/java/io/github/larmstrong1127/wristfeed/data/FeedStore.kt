@@ -36,6 +36,12 @@ data class FeedRecord(
         StateMachine.resolve(lastGood, lastOutcome, lastReason, nowMs)
 }
 
+/** Result of [FeedStore.add]; a rejection carries the message the UI shows. */
+sealed class AddResult {
+    data class Added(val id: String) : AddResult()
+    data class Rejected(val message: String) : AddResult()
+}
+
 /** Up to [MAX_FEEDS] feeds in SharedPreferences. Writes use commit() so the worker and tile see them at once. */
 class FeedStore(context: Context) {
     private val prefs: SharedPreferences =
@@ -68,19 +74,27 @@ class FeedStore(context: Context) {
         )
     }
 
-    /** Returns the new id, or null when the store is full or the URL is not https. */
+    /**
+     * Adds a feed. Rejects a non-https URL, a full store, and a URL that is already configured
+     * (compared after trimming whitespace), each with a user-visible message.
+     */
     @Synchronized
-    fun add(url: String): String? {
+    fun add(url: String): AddResult {
         val clean = url.trim()
-        if (!clean.startsWith("https://", ignoreCase = true) || clean.length <= 8) return null
+        if (!clean.startsWith("https://", ignoreCase = true) || clean.length <= 8) {
+            return AddResult.Rejected("Needs an https:// URL")
+        }
         val ids = ids()
-        if (ids.size >= MAX_FEEDS) return null
+        if (ids.size >= MAX_FEEDS) return AddResult.Rejected("Up to $MAX_FEEDS feeds")
+        if (ids.any { prefs.getString("$it.url", null)?.trim() == clean }) {
+            return AddResult.Rejected("Feed already added")
+        }
         val id = UUID.randomUUID().toString().substring(0, 8)
         prefs.edit()
             .putString("$id.url", clean)
             .putString(KEY_IDS, (ids + id).joinToString(","))
             .commit()
-        return id
+        return AddResult.Added(id)
     }
 
     @Synchronized

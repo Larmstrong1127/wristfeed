@@ -56,6 +56,22 @@ class ConformanceTest {
         if (failures.isNotEmpty()) fail("${failures.size} of ${cases.size} cases failed:\n" + failures.joinToString("\n"))
     }
 
+    /** SPEC "Number display": the same table drives publisher/tests/test_display.py. */
+    @Test fun numberDisplayVectors() {
+        val file = File(repoRoot(), "conformance/display/numbers.json")
+        val doc = MiniJson.parse(file.readText(Charsets.UTF_8).removePrefix("\uFEFF")) as Map<*, *>
+        val cases = doc["cases"] as List<*>
+        assertTrue("too few number vectors", cases.size >= 10)
+        val failures = ArrayList<String>()
+        for (c in cases) {
+            c as Map<*, *>
+            val input = (c["input"] as Number).toDouble()
+            val got = Display.formatNumber(input)
+            if (got != c["display"]) failures += "$input: expected ${c["display"]}, got $got"
+        }
+        if (failures.isNotEmpty()) fail(failures.joinToString("\n"))
+    }
+
     private fun check(name: String, expected: Map<*, *>, result: ParseResult) {
         val outcome = when (result) {
             is ParseResult.Ok -> "ok"

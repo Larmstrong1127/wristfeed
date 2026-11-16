@@ -1,0 +1,16 @@
+{
+  "outcome": "ok",
+  "fallback": false,
+  "feed": {
+    "wristfeed": 1,
+    "title": "T",
+    "updated": "2026-11-17T00:40:00Z",
+    "status": "idle",
+    "kind": "stats",
+    "rows": [],
+    "progress": null,
+    "message": null,
+    "stale_after_minutes": 360,
+    "tap_url": null
+  }
+}

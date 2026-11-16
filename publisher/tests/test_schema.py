@@ -8,7 +8,7 @@ from importlib import resources
 import pytest
 from conftest import corpus_cases
 
-from wristfeed.feed import parse
+from wristfeed.feed import MAX_DEPTH, _nesting_depth, _parse_int, _reject_constant, parse
 
 jsonschema = pytest.importorskip("jsonschema")
 
@@ -54,8 +54,12 @@ def _corpus_docs() -> list[object]:
     docs = []
     for case in corpus_cases():
         try:
-            docs.append(json.loads(case.read_bytes()))
-        except json.JSONDecodeError:
+            text = case.read_bytes().decode("utf-8-sig")
+            if _nesting_depth(text) > MAX_DEPTH:
+                continue  # malformed before any schema applies (SPEC rule 6)
+            # Decode exactly as parse_bytes does, so the schema sees the parser's input.
+            docs.append(json.loads(text, parse_int=_parse_int, parse_constant=_reject_constant))
+        except ValueError:  # not JSON, or NaN/Infinity (SPEC rule 6)
             continue
     return docs
 

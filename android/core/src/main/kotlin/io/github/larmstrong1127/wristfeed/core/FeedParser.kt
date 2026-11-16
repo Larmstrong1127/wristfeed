@@ -23,6 +23,21 @@ object FeedParser {
     /** SPEC rule 4 tolerance. */
     const val SKEW_TOLERANCE_MS = 2 * 60 * 1000L
 
+    /** SPEC: wristfeed must be an integer in -2^53..2^53. */
+    const val MAX_VERSION_MAGNITUDE = 1L shl 53
+
+    /** SPEC: stale_after_minutes is 1..525600 (one year), else the default. */
+    const val MAX_STALE_AFTER_MINUTES = 525_600L
+
+    /** SPEC rule 7: a number with a larger magnitude is "not a number". */
+    const val MAX_NUMBER_MAGNITUDE = 1e308
+
+    /** SPEC: offsets beyond +-18:00 are rejected. */
+    private const val MAX_OFFSET_MINUTES = 18 * 60
+
+    private fun finiteNumber(v: Any?): Double? =
+        (v as? Number)?.toDouble()?.takeIf { it.isFinite() && Math.abs(it) <= MAX_NUMBER_MAGNITUDE }
+
     private val STATUSES = mapOf("ok" to Status.OK, "warn" to Status.WARN, "bad" to Status.BAD, "idle" to Status.IDLE)
     private val KINDS = mapOf("stats" to Kind.STATS, "progress" to Kind.PROGRESS, "message" to Kind.MESSAGE)
 
@@ -54,6 +69,9 @@ object FeedParser {
         // Required: wristfeed (integer). Checked first so a v2 feed reads "unsupported", not "malformed".
         if (!obj.containsKey("wristfeed")) return ParseResult.Malformed("missing wristfeed")
         val version = obj["wristfeed"] as? Long ?: return ParseResult.Malformed("wristfeed is not an integer")
+        if (version < -MAX_VERSION_MAGNITUDE || version > MAX_VERSION_MAGNITUDE) {
+            return ParseResult.Malformed("wristfeed is out of range")
+        }
         if (version != Feed.SUPPORTED_VERSION) return ParseResult.Unsupported(version)
 
         // Required: title (non-blank string).
@@ -100,8 +118,8 @@ object FeedParser {
         if (rawProgress != null) {
             val m = rawProgress as? Map<*, *>
             val label = m?.get("label") as? String
-            val value = (m?.get("value") as? Number)?.toDouble()?.takeIf { it.isFinite() }
-            val max = (m?.get("max") as? Number)?.toDouble()?.takeIf { it.isFinite() }
+            val value = finiteNumber(m?.get("value"))
+            val max = finiteNumber(m?.get("max"))
             if (label == null || value == null || max == null || max <= 0.0) fallback = true
             else progress = Progress(label, value.coerceIn(0.0, max), max)
         }
@@ -113,7 +131,7 @@ object FeedParser {
         var staleAfter = Feed.DEFAULT_STALE_AFTER_MINUTES
         if (obj.containsKey("stale_after_minutes")) {
             val v = obj["stale_after_minutes"] as? Long
-            if (v != null && v in 1..Int.MAX_VALUE.toLong()) staleAfter = v.toInt() else fallback = true
+            if (v != null && v in 1L..MAX_STALE_AFTER_MINUTES) staleAfter = v.toInt() else fallback = true
         }
 
         val rawTap = obj["tap_url"]
@@ -136,9 +154,17 @@ object FeedParser {
         )
     }
 
-    /** RFC 3339 with `Z` or an offset; no zone = rejected; fractional seconds accepted. */
+    /**
+     * RFC 3339 with `Z` or an offset; no zone = rejected; 1-9 fraction digits accepted;
+     * offset minutes < 60 and |offset| <= 18:00 (SPEC, same check as the Python reference).
+     */
     fun parseRfc3339(s: String): Long? {
-        if (!RFC3339.matches(s)) return null
+        val m = RFC3339.matchEntire(s) ?: return null
+        val oh = m.groupValues[3]
+        if (oh.isNotEmpty()) {
+            val om = m.groupValues[4].toInt()
+            if (om >= 60 || oh.toInt() * 60 + om > MAX_OFFSET_MINUTES) return null
+        }
         return try {
             OffsetDateTime.parse(s.uppercase()).toInstant().toEpochMilli()
         } catch (e: DateTimeParseException) {
@@ -146,5 +172,5 @@ object FeedParser {
         }
     }
 
-    private val RFC3339 = Regex("""\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})""")
+    private val RFC3339 = Regex("""\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d{1,9})?([Zz]|[+-](\d{2}):(\d{2}))""")
 }

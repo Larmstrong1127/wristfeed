@@ -335,3 +335,85 @@ def test_invalid_json_is_malformed(body: bytes) -> None:
 
 def test_utf8_bom_is_tolerated() -> None:
     assert parse_bytes(b"\xef\xbb\xbf" + json.dumps(doc()).encode()).outcome == "ok"
+
+
+# ------------------------------------------------ hostile numbers, depth, constants
+
+
+@pytest.mark.parametrize(
+    "number",
+    ["1e400", "-1e400", "1" + "0" * 400, "9" * 5000, "1.5e308", "-" + "9" * 5000],
+)
+def test_hostile_numbers_never_crash_and_fall_back(number: str) -> None:
+    body = (
+        '{"wristfeed":1,"title":"T","updated":"2026-11-16T06:40:00Z","kind":"progress",'
+        f'"progress":{{"label":"A","value":1,"max":{number}}},"stale_after_minutes":{number}}}'
+    ).encode()
+    r = parse_bytes(body)
+    assert r.outcome == "ok"
+    assert r.feed is not None and r.feed.progress is None
+    assert r.feed.stale_after_minutes == 360
+    assert r.warnings
+
+
+@pytest.mark.parametrize("version", ["1" * 5000, "1e400", "100000000000000000000"])
+def test_hostile_version_is_malformed(version: str) -> None:
+    body = f'{{"wristfeed":{version},"title":"T","updated":"2026-11-16T06:40:00Z"}}'.encode()
+    assert parse_bytes(body).outcome == "malformed"
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_nan_and_infinity_are_malformed(constant: str) -> None:
+    body = (
+        f'{{"wristfeed":1,"title":"T","updated":"2026-11-16T06:40:00Z","extra":{constant}}}'
+    ).encode()
+    assert parse_bytes(body).outcome == "malformed"
+
+
+@pytest.mark.parametrize(
+    ("depth", "outcome"), [(32, "ok"), (33, "malformed"), (20000, "malformed")]
+)
+def test_nesting_depth_limit(depth: int, outcome: str) -> None:
+    inner = "[" * (depth - 1) + "]" * (depth - 1)
+    body = f'{{"wristfeed":1,"title":"T","updated":"2026-11-16T06:40:00Z","x":{inner}}}'
+    assert parse_bytes(body.encode()).outcome == outcome
+
+
+@pytest.mark.parametrize(
+    ("v", "outcome"),
+    [
+        (2**53, "unsupported"),
+        (-(2**53), "unsupported"),
+        (2**53 + 1, "malformed"),
+        (-(2**53) - 1, "malformed"),
+    ],
+)
+def test_version_range(v: int, outcome: str) -> None:
+    assert (
+        parse({"wristfeed": v, "title": "T", "updated": "2026-11-16T06:40:00Z"}).outcome == outcome
+    )
+
+
+@pytest.mark.parametrize(("v", "kept"), [(1, 1), (525600, 525600), (525601, 360), (0, 360)])
+def test_stale_after_range(v: int, kept: int) -> None:
+    r = parse(
+        {"wristfeed": 1, "title": "T", "updated": "2026-11-16T06:40:00Z", "stale_after_minutes": v}
+    )
+    assert r.feed is not None and r.feed.stale_after_minutes == kept
+
+
+@pytest.mark.parametrize(
+    ("text", "ok"),
+    [
+        ("2026-11-16T06:40:00.1Z", True),
+        ("2026-11-16T06:40:00.123456789Z", True),
+        ("2026-11-16T06:40:00.1234567891Z", False),
+        ("2026-11-16T06:40:00+18:00", True),
+        ("2026-11-16T06:40:00-18:00", True),
+        ("2026-11-16T06:40:00+18:01", False),
+        ("2026-11-16T06:40:00+23:59", False),
+        ("2026-11-16T06:40:00+05:60", False),
+    ],
+)
+def test_timestamp_fraction_and_offset_limits(text: str, ok: bool) -> None:
+    assert (parse_rfc3339(text) is not None) is ok

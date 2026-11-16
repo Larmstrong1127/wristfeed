@@ -12,7 +12,14 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
 
-/** SPEC Refresh: every 30 minutes with network; plus one-shot refreshes (tile visible, "Refresh now"). */
+/**
+ * SPEC Refresh: every 30 minutes with network; plus one-shot refreshes (tile visible).
+ *
+ * Concurrency: the one-shot work has its own unique name ([ONESHOT]) with [ExistingWorkPolicy.KEEP],
+ * so a request while one is queued or running is dropped, and it never replaces the periodic work.
+ * WorkManager may still run the periodic and the one-shot work at the same moment; that is safe
+ * because [Refresher] serializes every refresh behind one process-wide mutex.
+ */
 class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         Refresher.refreshAll(applicationContext)

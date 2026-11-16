@@ -130,3 +130,17 @@ def test_display_limits_match_spec() -> None:
 def test_progress_text() -> None:
     assert progress_text(Progress("A", 1, 5)) == "1/5"
     assert progress_text(Progress("A", 2.5, 10.0)) == "2.5/10"
+
+
+def test_number_display_vectors() -> None:
+    """SPEC "Number display": the shared table also drives the Kotlin CoreTest."""
+    import json
+    from pathlib import Path
+
+    from wristfeed.feed import format_number
+
+    path = Path(__file__).resolve().parents[2] / "conformance" / "display" / "numbers.json"
+    cases = json.loads(path.read_text("utf-8"))["cases"]
+    assert len(cases) >= 10
+    for case in cases:
+        assert format_number(case["input"]) == case["display"], case

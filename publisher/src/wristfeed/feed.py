@@ -21,6 +21,7 @@ import math
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 from typing import Any, Literal
 
 SUPPORTED_VERSION = 1
@@ -32,6 +33,12 @@ KINDS = ("stats", "progress", "message")
 DEFAULT_STATUS = "idle"
 DEFAULT_KIND = "stats"
 DEFAULT_STALE_AFTER_MINUTES = 360
+MAX_STALE_AFTER_MINUTES = 525_600  # one year
+MAX_VERSION_MAGNITUDE = 2**53  # wristfeed must be an integer in -2^53..2^53
+MAX_NUMBER_MAGNITUDE = 1e308  # larger magnitudes are "not a number" (SPEC rule 7)
+MAX_DEPTH = 32  # SPEC rule 6: the root container is level 1
+INT64_MIN, INT64_MAX = -(2**63), 2**63 - 1
+MAX_OFFSET_MINUTES = 18 * 60
 
 MAX_ROWS_SHOWN = 3
 TITLE_MAX_CHARS = 24
@@ -46,7 +53,7 @@ Severity = Literal["error", "warning"]
 
 _RFC3339 = re.compile(
     r"^(?P<base>\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2})"
-    r"(?:\.(?P<frac>\d+))?(?P<zone>[Zz]|[+-]\d{2}:\d{2})$"
+    r"(?:\.(?P<frac>\d{1,9}))?(?P<zone>[Zz]|[+-](?P<oh>\d{2}):(?P<om>\d{2}))$"
 )
 
 
@@ -140,7 +147,10 @@ def _is_int(v: Any) -> bool:
 
 
 def _is_number(v: Any) -> bool:
-    return (_is_int(v) or isinstance(v, float)) and math.isfinite(v)
+    """SPEC rule 7: finite and magnitude <= 1e308. Ints are compared exactly (no float())."""
+    if _is_int(v):
+        return -MAX_NUMBER_MAGNITUDE <= v <= MAX_NUMBER_MAGNITUDE
+    return isinstance(v, float) and math.isfinite(v) and abs(v) <= MAX_NUMBER_MAGNITUDE
 
 
 def format_utc(dt: datetime) -> str:
@@ -156,6 +166,10 @@ def parse_rfc3339(text: str) -> datetime | None:
     match = _RFC3339.fullmatch(text)
     if match is None:
         return None
+    if match["oh"] is not None:
+        oh, om = int(match["oh"]), int(match["om"])
+        if om >= 60 or oh * 60 + om > MAX_OFFSET_MINUTES:
+            return None  # DECISION: same limits as java.time (|offset| <= 18:00)
     # Normalize so datetime.fromisoformat accepts it on Python 3.10.
     fraction = (match["frac"] or "")[:6].ljust(6, "0") if match["frac"] else ""
     zone = "+00:00" if match["zone"] in ("Z", "z") else match["zone"]
@@ -177,6 +191,8 @@ def _check_version(doc: dict[str, Any]) -> tuple[Outcome | None, Problem | None]
     if not _is_int(v):
         # DECISION: a non-integer version (e.g. "1", 1.0) is malformed, not unsupported.
         return "malformed", Problem("wristfeed", "must be an integer", "error")
+    if not -MAX_VERSION_MAGNITUDE <= v <= MAX_VERSION_MAGNITUDE:
+        return "malformed", Problem("wristfeed", "must be an integer in -2^53..2^53", "error")
     if v != SUPPORTED_VERSION:
         return "unsupported", Problem("wristfeed", f"unsupported feed version {v}", "error")
     return None, None
@@ -295,9 +311,9 @@ def _parse_stale_after(doc: dict[str, Any], problems: list[Problem]) -> int:
     if "stale_after_minutes" not in doc:
         return DEFAULT_STALE_AFTER_MINUTES
     v = doc["stale_after_minutes"]
-    if _is_int(v) and v >= 1:
+    if _is_int(v) and 1 <= v <= MAX_STALE_AFTER_MINUTES:
         return v
-    _fallback(problems, "stale_after_minutes", "must be an integer >= 1")
+    _fallback(problems, "stale_after_minutes", f"must be an integer 1..{MAX_STALE_AFTER_MINUTES}")
     return DEFAULT_STALE_AFTER_MINUTES
 
 
@@ -359,10 +375,57 @@ def parse_bytes(body: bytes) -> ParseResult:
             "malformed", None, [Problem("$", f"larger than {MAX_BYTES} bytes", "error")]
         )
     try:
-        doc = json.loads(body.decode("utf-8-sig"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        text = body.decode("utf-8-sig")
+        if _nesting_depth(text) > MAX_DEPTH:
+            return ParseResult(
+                "malformed", None, [Problem("$", f"nested deeper than {MAX_DEPTH}", "error")]
+            )
+        doc = json.loads(text, parse_int=_parse_int, parse_constant=_reject_constant)
+    except (UnicodeDecodeError, ValueError, OverflowError, RecursionError) as exc:
+        # json.JSONDecodeError is a ValueError; so are NaN/Infinity (rule 6).
         return ParseResult("malformed", None, [Problem("$", f"not valid JSON: {exc}", "error")])
     return parse(doc)
+
+
+def _parse_int(text: str) -> int | float:
+    """SPEC rule 7 (matches the watch's MiniJson): an integer literal outside int64 is
+    read as a float, which is inf beyond ~1e308. Avoids int()'s 4300-digit ValueError."""
+    if len(text) <= 20:
+        n = int(text)
+        if INT64_MIN <= n <= INT64_MAX:
+            return n
+    return float(text)
+
+
+def _reject_constant(name: str) -> Any:
+    raise ValueError(f"{name} is not JSON")
+
+
+def _nesting_depth(text: str) -> int:
+    """Deepest ``[``/``{`` nesting outside strings (the root container is 1).
+
+    Only for the rule-6 depth limit; the scan stops early once over the limit."""
+    depth = deepest = 0
+    in_string = escaped = False
+    for ch in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+        elif ch == '"':
+            in_string = True
+        elif ch in "[{":
+            depth += 1
+            if depth > deepest:
+                deepest = depth
+                if deepest > MAX_DEPTH:
+                    return deepest
+        elif ch in "]}":
+            depth -= 1
+    return deepest
 
 
 # ---------------------------------------------------------------- clock and age
@@ -431,8 +494,17 @@ def display_message(feed: Feed) -> str | None:
 
 
 def format_number(v: float) -> str:
-    """Integral numbers print without ".0" so the ring reads "1/5", not "1.0/5.0"."""
-    return str(int(v)) if float(v).is_integer() else f"{v:g}"
+    """SPEC "Number display": whole and |v| < 1e15 -> plain integer ("1/5", not "1.0/5.0");
+    otherwise 6 significant digits, round half up on the exact binary value, trailing zeros
+    stripped, plain notation (no exponent). Kotlin: BigDecimal.round(MathContext(6))."""
+    f = float(v)
+    if f.is_integer() and abs(f) < 1e15:
+        return str(int(f))
+    with localcontext() as ctx:
+        ctx.prec = 6
+        ctx.rounding = ROUND_HALF_UP
+        d = (+Decimal(f)).normalize()
+    return format(d, "f")
 
 
 def progress_text(p: Progress) -> str:

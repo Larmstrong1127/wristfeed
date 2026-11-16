@@ -9,7 +9,10 @@ import io.github.larmstrong1127.wristfeed.core.FeedParser
 import io.github.larmstrong1127.wristfeed.core.FetchOutcome
 import io.github.larmstrong1127.wristfeed.core.ParseResult
 import io.github.larmstrong1127.wristfeed.tile.FeedTileService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -64,28 +67,59 @@ object Fetcher {
     }
 }
 
-/** Fetch + parse + store + poke the tile and complications. */
+/**
+ * Fetch + parse + store + poke the tile and complications.
+ *
+ * One process-wide [lock] serializes every refresh (periodic worker, one-shot worker, the app's
+ * "Refresh now" and the add-feed fetch), so two refreshes never interleave their store writes.
+ * All network and store work runs on [Dispatchers.IO], never on Main.
+ */
 object Refresher {
+    private val lock = Mutex()
+
     suspend fun refreshAll(context: Context) {
         val store = FeedStore(context)
-        store.ids().forEach { refreshOne(context, store, it, notify = false) }
+        lock.withLock {
+            val ids = withContext(Dispatchers.IO) { store.ids() }
+            ids.forEach { refreshLocked(store, it) }
+        }
         notifySurfaces(context)
     }
 
     suspend fun refreshOne(context: Context, store: FeedStore, id: String, notify: Boolean = true) {
-        val record = store.get(id) ?: return
-        val now = System.currentTimeMillis()
-        val result = withContext(Dispatchers.IO) { Fetcher.get(record.url) }
-        when (result) {
-            is HttpResult.Failed -> store.recordFetch(id, FetchOutcome.UNREACHABLE, result.why, null, now)
-            HttpResult.TooLarge -> store.recordFetch(id, FetchOutcome.MALFORMED, "larger than 64 KB", null, now)
-            is HttpResult.Body -> when (val parsed = FeedParser.parse(result.bytes, now)) {
-                is ParseResult.Ok -> store.recordFetch(id, FetchOutcome.OK, null, result.bytes, now)
-                is ParseResult.Malformed -> store.recordFetch(id, FetchOutcome.MALFORMED, parsed.reason, null, now)
-                is ParseResult.Unsupported -> store.recordFetch(id, FetchOutcome.UNSUPPORTED, "version ${parsed.version}", null, now)
+        lock.withLock { refreshLocked(store, id) }
+        if (notify) notifySurfaces(context)
+    }
+
+    /**
+     * Refreshes one feed. Any failure (including unexpected runtime exceptions from the network
+     * stack or the parser) is recorded for this feed only, so one bad feed never aborts the others
+     * or crashes the caller. Cancellation still propagates.
+     */
+    private suspend fun refreshLocked(store: FeedStore, id: String) {
+        withContext(Dispatchers.IO) {
+            val record = store.get(id) ?: return@withContext
+            val now = System.currentTimeMillis()
+            try {
+                when (val result = Fetcher.get(record.url)) {
+                    is HttpResult.Failed -> store.recordFetch(id, FetchOutcome.UNREACHABLE, result.why, null, now)
+                    HttpResult.TooLarge -> store.recordFetch(id, FetchOutcome.MALFORMED, "larger than 64 KB", null, now)
+                    is HttpResult.Body -> when (val parsed = FeedParser.parse(result.bytes, now)) {
+                        is ParseResult.Ok -> store.recordFetch(id, FetchOutcome.OK, null, result.bytes, now)
+                        is ParseResult.Malformed -> store.recordFetch(id, FetchOutcome.MALFORMED, parsed.reason, null, now)
+                        is ParseResult.Unsupported -> store.recordFetch(id, FetchOutcome.UNSUPPORTED, "version ${parsed.version}", null, now)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                try {
+                    store.recordFetch(id, FetchOutcome.UNREACHABLE, e.javaClass.simpleName, null, now)
+                } catch (ignored: Exception) {
+                    // The store itself failed; leave this feed as it was and move on.
+                }
             }
         }
-        if (notify) notifySurfaces(context)
     }
 
     fun notifySurfaces(context: Context) {

@@ -1,0 +1,93 @@
+{
+  "_comment": "SPEC 'Number display' vectors, shared by publisher/tests/test_display.py and android core CoreTest. 'input' is read as a JSON number (to a double), 'display' is the exact expected text.",
+  "cases": [
+    {
+      "input": 0,
+      "display": "0"
+    },
+    {
+      "input": -0.0,
+      "display": "0"
+    },
+    {
+      "input": 1,
+      "display": "1"
+    },
+    {
+      "input": 5,
+      "display": "5"
+    },
+    {
+      "input": -3,
+      "display": "-3"
+    },
+    {
+      "input": 2.5,
+      "display": "2.5"
+    },
+    {
+      "input": 0.1,
+      "display": "0.1"
+    },
+    {
+      "input": 1.5,
+      "display": "1.5"
+    },
+    {
+      "input": 1234567,
+      "display": "1234567"
+    },
+    {
+      "input": 1234567.5,
+      "display": "1234570"
+    },
+    {
+      "input": 123456.75,
+      "display": "123457"
+    },
+    {
+      "input": -1234567.5,
+      "display": "-1234570"
+    },
+    {
+      "input": 1.234567e-06,
+      "display": "0.00000123457"
+    },
+    {
+      "input": 3.14159265,
+      "display": "3.14159"
+    },
+    {
+      "input": 2.675,
+      "display": "2.675"
+    },
+    {
+      "input": 999999.5,
+      "display": "1000000"
+    },
+    {
+      "input": 999999999999999,
+      "display": "999999999999999"
+    },
+    {
+      "input": 1000000000000000.0,
+      "display": "1000000000000000"
+    },
+    {
+      "input": 1e+20,
+      "display": "100000000000000000000"
+    },
+    {
+      "input": 1.25e-07,
+      "display": "0.000000125"
+    },
+    {
+      "input": 100.0,
+      "display": "100"
+    },
+    {
+      "input": 0.30000000000000004,
+      "display": "0.3"
+    }
+  ]
+}

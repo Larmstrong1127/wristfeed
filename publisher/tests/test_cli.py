@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 
 from wristfeed import cli
-from wristfeed.cli import main, parse_progress_arg, parse_row_arg, raw_url
+from wristfeed.cli import main, parse_gist_url, parse_progress_arg, parse_row_arg, raw_url
 from wristfeed.feed import parse
 
 VALID = {"wristfeed": 1, "title": "JARVIS", "updated": "2026-11-16T06:40:00Z"}
@@ -127,10 +127,12 @@ def test_build_rejects_unknown_status() -> None:
 class FakeGh:
     def __init__(self, stdout: str = "", returncode: int = 0) -> None:
         self.calls: list[list[str]] = []
+        self.inputs: list[str | None] = []
         self.stdout, self.returncode = stdout, returncode
 
-    def __call__(self, argv: list[str], **_: Any) -> subprocess.CompletedProcess[str]:
+    def __call__(self, argv: list[str], **kw: Any) -> subprocess.CompletedProcess[str]:
         self.calls.append(argv)
+        self.inputs.append(kw.get("input"))
         return subprocess.CompletedProcess(argv, self.returncode, self.stdout, "gh failed")
 
 
@@ -159,7 +161,8 @@ def test_publish_create_prints_raw_url(tmp_path: Path, gh: FakeGh, capsys) -> No
     gh.stdout = "- Creating gist feed.json\nhttps://gist.github.com/someone/deadbeef\n"
     path = write(tmp_path, VALID)
     assert main(["publish", str(path), "--create", "--filename", "w.json"]) == 0
-    assert gh.calls == [["gh", "gist", "create", "--filename", "w.json", str(path)]]
+    assert gh.calls == [["gh", "gist", "create", "--filename", "w.json", "-"]]
+    assert gh.inputs == [path.read_text("utf-8")]
     assert "--public" not in gh.calls[0]
     captured = capsys.readouterr()
     assert captured.out.strip() == "https://gist.githubusercontent.com/someone/deadbeef/raw/w.json"
@@ -200,6 +203,42 @@ def test_raw_url() -> None:
     assert raw_url("https://gist.github.com/u/id/", "f.json") == (
         "https://gist.githubusercontent.com/u/id/raw/f.json"
     )
+    assert raw_url("https://gist.github.com/id", "f.json") is None
+
+
+@pytest.mark.parametrize(
+    ("url", "user", "gist_id"),
+    [
+        ("https://gist.github.com/someone/deadbeef", "someone", "deadbeef"),
+        ("https://gist.github.com/someone/deadbeef/", "someone", "deadbeef"),
+        ("https://gist.github.com/deadbeef", None, "deadbeef"),
+        ("https://gist.github.com/deadbeef/\n", None, "deadbeef"),
+    ],
+)
+def test_parse_gist_url(url: str, user: str | None, gist_id: str) -> None:
+    assert parse_gist_url(url) == (user, gist_id)
+
+
+def test_publish_create_without_user_prints_gist_url(tmp_path: Path, gh: FakeGh, capsys) -> None:
+    gh.stdout = "https://gist.github.com/deadbeef/\n"
+    path = write(tmp_path, VALID)
+    assert main(["publish", str(path), "--create", "--filename", "w.json"]) == 0
+    captured = capsys.readouterr()
+    assert captured.out.strip().rstrip("/") == "https://gist.github.com/deadbeef"
+    assert "click Raw" in captured.err
+
+
+def test_publish_create_trailing_slash_and_noise(tmp_path: Path, gh: FakeGh, capsys) -> None:
+    gh.stdout = "https://gist.github.com/someone/deadbeef/\n✓ Created secret gist\n"
+    path = write(tmp_path, VALID)
+    assert main(["publish", str(path), "--create"]) == 0
+    out = capsys.readouterr().out.strip()
+    assert out == f"https://gist.githubusercontent.com/someone/deadbeef/raw/{path.name}"
+
+
+def test_publish_create_without_url_fails(tmp_path: Path, gh: FakeGh) -> None:
+    gh.stdout = "something odd\n"
+    assert main(["publish", str(write(tmp_path, VALID)), "--create"]) == 1
 
 
 # ------------------------------------------------------- real entry point

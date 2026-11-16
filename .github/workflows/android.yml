@@ -1,6 +1,7 @@
 name: android
 
-# Note: this passes only once android/gradle/wrapper/gradle-wrapper.jar is committed.
+# No Gradle wrapper jar is committed, so CI uses a provisioned Gradle whose version must
+# match distributionUrl in android/gradle/wrapper/gradle-wrapper.properties (8.7).
 
 on:
   push:
@@ -21,8 +22,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
-      - run: chmod +x gradlew
-      - run: ./gradlew test assembleDebug
+        with:
+          gradle-version: "8.7"
+      - run: gradle test assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: wristfeed-debug-apk

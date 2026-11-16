@@ -33,6 +33,10 @@ android/
 
 1. Install Android Studio (Koala or newer) with the Android 14 (API 34) SDK.
 2. **File > Open** the `android/` folder. Studio downloads Gradle 8.7 and creates the wrapper jar.
+   The wrapper (`gradlew`, `gradle-wrapper.jar`) is not committed: Android Studio generates it
+   (or run `gradle wrapper` with Gradle 8.7). CI does not need it; it runs `gradle test assembleDebug`
+   with Gradle 8.7 from `gradle/actions/setup-gradle` (keep that version in sync with
+   `gradle/wrapper/gradle-wrapper.properties`).
 3. Run the JVM tests: `./gradlew :core:test` (no emulator needed). The conformance test reads every
    `<name>.json` + `<name>.expected.json` pair in `../conformance/` and fails if the folder is empty.
 4. Build the app: `./gradlew :app:assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`.

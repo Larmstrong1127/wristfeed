@@ -112,18 +112,45 @@ def cmd_build(args: argparse.Namespace) -> int:
 # ------------------------------------------------------------------- publish
 
 
-def _run_gh(argv: list[str]) -> subprocess.CompletedProcess[str]:
+def _run_gh(argv: list[str], stdin: str | None = None) -> subprocess.CompletedProcess[str]:
     if shutil.which("gh") is None:
         raise UsageError("the GitHub CLI 'gh' is not on PATH (https://cli.github.com)")
-    return subprocess.run(["gh", *argv], capture_output=True, text=True, check=False)
+    return subprocess.run(
+        ["gh", *argv], input=stdin, capture_output=True, text=True, encoding="utf-8", check=False
+    )
 
 
-def raw_url(gist_url: str, filename: str) -> str:
-    """``https://gist.github.com/USER/ID`` -> the stable raw URL of ``filename``
-    (no revision hash, so it always serves the latest version)."""
-    parts = gist_url.strip().rstrip("/").split("/")
-    user, gist_id = parts[-2], parts[-1]
+def parse_gist_url(gist_url: str) -> tuple[str | None, str]:
+    """``https://gist.github.com/[USER/]ID[/]`` -> ``(user or None, id)``.
+
+    The id is always the last path segment; the user is known only when the path
+    has exactly two segments (gh may print either form)."""
+    text = gist_url.strip().split("?", 1)[0].split("#", 1)[0].rstrip("/")
+    _, sep, rest = text.partition("://")
+    path = (rest if sep else text).split("/")[1:]  # drop the host
+    segments = [s for s in path if s]
+    if not segments:
+        raise ValueError(f"no gist id in {gist_url!r}")
+    user = segments[-2] if len(segments) == 2 else None
+    return user, segments[-1]
+
+
+def raw_url(gist_url: str, filename: str) -> str | None:
+    """The stable raw URL of ``filename`` (no revision hash, so it always serves the
+    latest version), or None when the gist URL does not name the owner."""
+    user, gist_id = parse_gist_url(gist_url)
+    if user is None:
+        return None
     return f"https://gist.githubusercontent.com/{user}/{gist_id}/raw/{filename}"
+
+
+def _gist_url_from_output(stdout: str) -> str | None:
+    """The last line of gh's output that looks like a URL."""
+    for line in reversed(stdout.strip().splitlines()):
+        line = line.strip()
+        if line.startswith(("https://", "http://")):
+            return line
+    return None
 
 
 def cmd_publish(args: argparse.Namespace) -> int:
@@ -138,11 +165,33 @@ def cmd_publish(args: argparse.Namespace) -> int:
     print(SECRET_GIST_WARNING, file=sys.stderr)
 
     if args.create:
-        proc = _run_gh(["gist", "create", "--filename", filename, str(path)])
+        # --filename only names stdin content, so the file goes in on stdin ("-").
+        proc = _run_gh(
+            ["gist", "create", "--filename", filename, "-"],
+            stdin=path.read_text(encoding="utf-8-sig"),
+        )
         if proc.returncode != 0:
             print(proc.stderr.strip(), file=sys.stderr)
             return proc.returncode
-        print(raw_url(proc.stdout.strip().splitlines()[-1], filename))
+        gist_url = _gist_url_from_output(proc.stdout)
+        if gist_url is None:
+            print(
+                f"error: could not find the gist URL in gh output: {proc.stdout!r}", file=sys.stderr
+            )
+            return 1
+        try:
+            raw = raw_url(gist_url, filename)
+        except ValueError:
+            raw = None
+        if raw is None:
+            print(gist_url)
+            print(
+                f"open the gist, click Raw on {filename}, and use that URL "
+                "without the revision hash",
+                file=sys.stderr,
+            )
+        else:
+            print(raw)
         return 0
 
     proc = _run_gh(["gist", "edit", args.gist, "--filename", filename, str(path)])

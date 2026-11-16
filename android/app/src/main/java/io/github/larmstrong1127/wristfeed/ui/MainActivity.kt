@@ -36,12 +36,15 @@ import androidx.wear.remote.interactions.RemoteActivityHelper
 import io.github.larmstrong1127.wristfeed.core.Display
 import io.github.larmstrong1127.wristfeed.core.FeedState
 import io.github.larmstrong1127.wristfeed.core.name
+import io.github.larmstrong1127.wristfeed.data.AddResult
 import io.github.larmstrong1127.wristfeed.data.FeedRecord
 import io.github.larmstrong1127.wristfeed.data.FeedStore
 import io.github.larmstrong1127.wristfeed.data.Refresher
 import io.github.larmstrong1127.wristfeed.tile.TileLayouts
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Feed list: add by URL (RemoteInput keyboard/voice), delete, choose the tile feed, refresh now. */
 class MainActivity : ComponentActivity() {
@@ -99,14 +102,15 @@ fun FeedListScreen(store: FeedStore) {
         val data = result.data ?: return@rememberLauncherForActivityResult
         val url = RemoteInput.getResultsFromIntent(data)?.getCharSequence(KEY_URL)?.toString()?.trim()
         if (url.isNullOrEmpty()) return@rememberLauncherForActivityResult
-        val id = store.add(url)
-        if (id == null) {
-            Toast.makeText(context, if (feeds.size >= FeedStore.MAX_FEEDS) "Up to 5 feeds" else "Needs an https:// URL", Toast.LENGTH_SHORT).show()
-        } else {
-            reload()
-            scope.launch {
-                Refresher.refreshOne(context, store, id)
-                reload()
+        // Store writes (commit()) run on IO, never on Main.
+        scope.launch {
+            when (val added = withContext(Dispatchers.IO) { store.add(url) }) {
+                is AddResult.Rejected -> Toast.makeText(context, added.message, Toast.LENGTH_SHORT).show()
+                is AddResult.Added -> {
+                    reload()
+                    Refresher.refreshOne(context, store, added.id)
+                    reload()
+                }
             }
         }
     }
@@ -127,12 +131,24 @@ fun FeedListScreen(store: FeedStore) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (rec.id != tileId) {
                         CompactChip(
-                            onClick = { store.setTileFeed(rec.id); reload(); Refresher.notifySurfaces(context) },
+                            onClick = {
+                                scope.launch {
+                                    withContext(Dispatchers.IO) { store.setTileFeed(rec.id) }
+                                    reload()
+                                    Refresher.notifySurfaces(context)
+                                }
+                            },
                             label = { Text("On tile") },
                         )
                     }
                     CompactChip(
-                        onClick = { store.remove(rec.id); reload(); Refresher.notifySurfaces(context) },
+                        onClick = {
+                            scope.launch {
+                                withContext(Dispatchers.IO) { store.remove(rec.id) }
+                                reload()
+                                Refresher.notifySurfaces(context)
+                            }
+                        },
                         label = { Text("Delete") },
                         colors = ChipDefaults.secondaryChipColors(),
                     )

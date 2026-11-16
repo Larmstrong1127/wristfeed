@@ -11,7 +11,8 @@ package io.github.larmstrong1127.wristfeed.core
 class JsonParseException(message: String) : Exception(message)
 
 object MiniJson {
-    private const val MAX_DEPTH = 64
+    /** SPEC rule 6: at most 32 nested containers (the root container is level 1). */
+    const val MAX_DEPTH = 32
 
     fun parse(text: String): Any? {
         val r = Reader(text)
@@ -34,8 +35,8 @@ object MiniJson {
         fun fail(msg: String): Nothing = throw JsonParseException("$msg at $pos")
 
         fun value(depth: Int): Any? {
-            if (depth > MAX_DEPTH) fail("nesting too deep")
             if (atEnd()) fail("unexpected end")
+            if ((s[pos] == '{' || s[pos] == '[') && depth >= MAX_DEPTH) fail("nesting too deep")
             return when (val c = s[pos]) {
                 '{' -> obj(depth)
                 '[' -> arr(depth)

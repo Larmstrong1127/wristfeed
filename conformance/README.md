@@ -23,6 +23,8 @@ File names start with the outcome family: `valid-`, `fallback-` (usable, but som
 | `fallback` | `true` when at least one optional field or row was wrong and fell back to its default (SPEC rule 3). A strict validator (`wristfeed validate`) rejects these. |
 | `feed` | Present only when `outcome` is `ok`. Every field, with defaults filled in: `wristfeed`, `title` (untruncated), `updated` (normalized to UTC, whole seconds, `Z` suffix), `status`, `kind`, `rows` (all valid rows in order, each with `label`, `value`, `status` or null; bad rows dropped; display shows the first 3), `progress` (null or `{label, value, max}` with `value` already clamped to 0..max; compare numbers numerically), `message`, `stale_after_minutes`, `tap_url`. |
 
+`display/numbers.json` is not a feed case (the suites only pick up top-level pairs): it is the SPEC "Number display" table, `{"cases": [{"input": <number>, "display": "<text>"}]}`, run by `publisher/tests/test_display.py` and the Kotlin `ConformanceTest.numberDisplayVectors`.
+
 Display truncation, the clock-skew guard and fresh/stale are covered by unit tests on each side (see `publisher/tests/test_display.py` for the reference cases).
 
 ## Adding a case

@@ -166,6 +166,65 @@ class CoreTest {
         assertEquals("All quiet", Display.longText(m))
     }
 
+    @Test fun shortTextIsCutToSevenCharacters() {
+        val f = ok(specExample).copy(title = "Household chores", rows = listOf(Row("A", "123456789", null)))
+        assertEquals("123456\u2026", Display.shortText(f))
+        assertEquals("Househo".dropLast(1) + "\u2026", Display.shortTitle(f))
+        assertEquals(7, Display.shortTitle(f).length)
+        val p = f.copy(kind = Kind.PROGRESS, progress = Progress("A", 1234.5, 99999.0))
+        assertEquals("1234.5\u2026", Display.shortText(p))
+        // LONG_TEXT is not cut to 7.
+        assertTrue(Display.longText(f).startsWith("Household chores: "))
+    }
+
+    private fun outcome(json: String): String = when (FeedParser.parse(json, Long.MAX_VALUE)) {
+        is ParseResult.Ok -> "ok"
+        is ParseResult.Malformed -> "malformed"
+        is ParseResult.Unsupported -> "unsupported"
+    }
+
+    @Test fun hostileNumbersFallBack() {
+        for (n in listOf("1e400", "-1e400", "1" + "0".repeat(400), "9".repeat(5000), "1.5e308")) {
+            val f = ok(
+                """{"wristfeed":1,"title":"T","updated":"2026-11-16T06:40:00Z","kind":"progress",""" +
+                    """"progress":{"label":"A","value":1,"max":$n},"stale_after_minutes":$n}""",
+            )
+            assertNull(n.take(10), f.progress)
+            assertEquals(360, f.staleAfterMinutes)
+        }
+    }
+
+    @Test fun nanInfinityAndDepth() {
+        val head = """{"wristfeed":1,"title":"T","updated":"2026-11-16T06:40:00Z","x":"""
+        for (c in listOf("NaN", "Infinity", "-Infinity")) assertEquals(c, "malformed", outcome("$head$c}"))
+        assertEquals("ok", outcome(head + "[".repeat(31) + "]".repeat(31) + "}"))
+        assertEquals("malformed", outcome(head + "[".repeat(32) + "]".repeat(32) + "}"))
+        assertEquals("malformed", outcome(head + "[".repeat(20000) + "]".repeat(20000) + "}"))
+    }
+
+    @Test fun versionAndStaleRanges() {
+        val tail = ""","title":"T","updated":"2026-11-16T06:40:00Z"}"""
+        assertEquals("unsupported", outcome("""{"wristfeed":9007199254740992$tail"""))
+        assertEquals("unsupported", outcome("""{"wristfeed":-9007199254740992$tail"""))
+        assertEquals("malformed", outcome("""{"wristfeed":9007199254740993$tail"""))
+        assertEquals("malformed", outcome("""{"wristfeed":-9007199254740993$tail"""))
+        assertEquals("malformed", outcome("""{"wristfeed":100000000000000000000$tail"""))
+        val base = """{"wristfeed":1,"title":"T","updated":"2026-11-16T06:40:00Z","stale_after_minutes":"""
+        assertEquals(525600, ok("${base}525600}").staleAfterMinutes)
+        assertEquals(360, ok("${base}525601}").staleAfterMinutes)
+        assertEquals(360, ok("${base}0}").staleAfterMinutes)
+    }
+
+    @Test fun timestampFractionAndOffsetLimits() {
+        assertTrue(FeedParser.parseRfc3339("2026-11-16T06:40:00.123456789Z") != null)
+        assertNull(FeedParser.parseRfc3339("2026-11-16T06:40:00.1234567891Z"))
+        assertTrue(FeedParser.parseRfc3339("2026-11-16T06:40:00+18:00") != null)
+        assertTrue(FeedParser.parseRfc3339("2026-11-16T06:40:00-18:00") != null)
+        assertNull(FeedParser.parseRfc3339("2026-11-16T06:40:00+18:01"))
+        assertNull(FeedParser.parseRfc3339("2026-11-16T06:40:00+23:59"))
+        assertNull(FeedParser.parseRfc3339("2026-11-16T06:40:00+05:60"))
+    }
+
     @Test fun jsonReader() {
         assertEquals(mapOf("a" to listOf(1L, 2.5, true, null, "x\"é")), MiniJson.parse("""{"a":[1,2.5,true,null,"x\"é"]}"""))
         assertEquals(1.0, MiniJson.parse("1.0"))
