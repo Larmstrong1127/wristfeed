@@ -12,6 +12,7 @@ message wrapping). Output is deterministic: no timestamps, ids or randomness.
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from xml.sax.saxutils import escape
@@ -31,6 +32,21 @@ from wristfeed.feed import (
 )
 
 STATES = ("fresh", "stale", "unreachable", "malformed", "unsupported", "loading")
+
+# XML 1.0 forbids most control characters and U+FFFE/U+FFFF; a feed may carry
+# them (the parser accepts any string), so they become U+FFFD before escaping
+# or the SVG is not well-formed (second review, 2026-11-15). Built from code
+# points so the allowed ranges stay readable.
+_XML_ALLOWED = [(0x09, 0x0A), (0x0D, 0x0D), (0x20, 0xD7FF), (0xE000, 0xFFFD), (0x10000, 0x10FFFF)]
+_XML_INVALID = re.compile(
+    "[^" + "".join(re.escape(chr(a)) + "-" + re.escape(chr(b)) for a, b in _XML_ALLOWED) + "]"
+)
+_REPLACEMENT = chr(0xFFFD)
+
+
+def _xml_safe(text: str) -> str:
+    return _XML_INVALID.sub(_REPLACEMENT, text)
+
 
 # Colors: same ARGB values as TileLayouts.kt (alpha is always FF there).
 WHITE = 0xFFFFFF
@@ -189,7 +205,7 @@ def _text_svg(t: Text, cx: float, top: float, k: float, anchor: str = "middle") 
         out.append(
             f'<text x="{_fmt(cx)}" y="{_fmt(y)}" font-size="{_fmt(t.sp * k)}"'
             f'{weight} fill="{hex_color(t.color)}" text-anchor="{anchor}"'
-            f' dominant-baseline="central">{escape(line)}</text>'
+            f' dominant-baseline="central">{escape(_xml_safe(line))}</text>'
         )
     return out
 

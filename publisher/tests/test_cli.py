@@ -203,7 +203,12 @@ def test_raw_url() -> None:
     assert raw_url("https://gist.github.com/u/id/", "f.json") == (
         "https://gist.githubusercontent.com/u/id/raw/f.json"
     )
-    assert raw_url("https://gist.github.com/id", "f.json") is None
+    # gh usually prints no owner: the gist.github.com form redirects to the raw file.
+    assert (
+        raw_url("https://gist.github.com/id", "f.json") == "https://gist.github.com/id/raw/f.json"
+    )
+    # A name with a space is percent-encoded so the URL still fetches.
+    assert raw_url("https://gist.github.com/u/id", "my feed.json").endswith("/raw/my%20feed.json")
 
 
 @pytest.mark.parametrize(
@@ -224,8 +229,8 @@ def test_publish_create_without_user_prints_gist_url(tmp_path: Path, gh: FakeGh,
     path = write(tmp_path, VALID)
     assert main(["publish", str(path), "--create", "--filename", "w.json"]) == 0
     captured = capsys.readouterr()
-    assert captured.out.strip().rstrip("/") == "https://gist.github.com/deadbeef"
-    assert "click Raw" in captured.err
+    # No owner in gh's URL: the gist.github.com raw form redirects to the file.
+    assert captured.out.strip() == "https://gist.github.com/deadbeef/raw/w.json"
 
 
 def test_publish_create_trailing_slash_and_noise(tmp_path: Path, gh: FakeGh, capsys) -> None:

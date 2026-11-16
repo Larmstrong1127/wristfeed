@@ -132,3 +132,19 @@ def test_cli_errors(tmp_path: Path) -> None:
     assert main(["preview", str(f), "--out", out, "--state", "fresh"]) == 2
     assert main(["preview", str(f), "--out", out, "--size", "300"]) == 0
     assert 'width="300"' in Path(out).read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("title", ["a\u0001b", "a\u000bb", "a￾b", "<script>alert(1)</script>&\"'"])
+def test_feed_text_never_breaks_the_svg(title) -> None:
+    # Control characters and U+FFFE are illegal in XML 1.0 (second review, 2026-11-15).
+    import json as _json
+    from xml.dom import minidom
+
+    from wristfeed.feed import parse_bytes
+    from wristfeed.preview import render
+
+    doc = {"wristfeed": 1, "title": title, "updated": "2026-11-16T06:40:00Z"}
+    res = parse_bytes(_json.dumps(doc).encode())
+    svg = render(res, now=datetime(2026, 11, 16, 6, 45, tzinfo=timezone.utc))
+    minidom.parseString(svg)  # raises if not well-formed
+    assert "<script" not in svg

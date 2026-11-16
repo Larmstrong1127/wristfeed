@@ -10,6 +10,7 @@ import json
 import shutil
 import subprocess
 import sys
+import urllib.parse
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
@@ -141,11 +142,18 @@ def parse_gist_url(gist_url: str) -> tuple[str | None, str]:
 
 def raw_url(gist_url: str, filename: str) -> str | None:
     """The stable raw URL of ``filename`` (no revision hash, so it always serves the
-    latest version), or None when the gist URL does not name the owner."""
+    latest version).
+
+    gh usually prints ``https://gist.github.com/<id>`` with no owner; GitHub
+    redirects ``gist.github.com/<id>/raw/<file>`` to the raw file, so that form
+    works without knowing the owner (second review, 2026-11-15). The file name is
+    percent-encoded so a name with spaces still fetches.
+    """
     user, gist_id = parse_gist_url(gist_url)
+    name = urllib.parse.quote(filename)
     if user is None:
-        return None
-    return f"https://gist.githubusercontent.com/{user}/{gist_id}/raw/{filename}"
+        return f"https://gist.github.com/{gist_id}/raw/{name}"
+    return f"https://gist.githubusercontent.com/{user}/{gist_id}/raw/{name}"
 
 
 def _gist_url_from_output(stdout: str) -> str | None:
