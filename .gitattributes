@@ -1,0 +1,4 @@
+# Pin line endings so golden-file snapshot tests match on every OS.
+* text=auto eol=lf
+*.png binary
+*.jar binary
