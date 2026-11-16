@@ -1,0 +1,20 @@
+{
+  "outcome": "ok",
+  "fallback": false,
+  "feed": {
+    "wristfeed": 1,
+    "title": "JARVIS",
+    "updated": "2026-11-16T06:40:00Z",
+    "status": "idle",
+    "kind": "progress",
+    "rows": [],
+    "progress": {
+      "label": "Steps",
+      "value": 6500,
+      "max": 10000
+    },
+    "message": null,
+    "stale_after_minutes": 360,
+    "tap_url": null
+  }
+}

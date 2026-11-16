@@ -1,0 +1,27 @@
+{
+  "wristfeed": 1,
+  "title": "JARVIS",
+  "updated": "2026-11-16T06:40:00Z",
+  "rows": [
+    {
+      "label": "R0",
+      "value": "0"
+    },
+    {
+      "label": "R1",
+      "value": "1"
+    },
+    {
+      "label": "R2",
+      "value": "2"
+    },
+    {
+      "label": "R3",
+      "value": "3"
+    },
+    {
+      "label": "R4",
+      "value": "4"
+    }
+  ]
+}

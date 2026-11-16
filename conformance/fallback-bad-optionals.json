@@ -1,0 +1,9 @@
+{
+  "wristfeed": 1,
+  "title": "JARVIS",
+  "updated": "2026-11-16T06:40:00Z",
+  "stale_after_minutes": 0,
+  "tap_url": "http://example.com",
+  "message": 5,
+  "rows": "nope"
+}

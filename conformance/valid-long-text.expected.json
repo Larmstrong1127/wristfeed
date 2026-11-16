@@ -1,0 +1,22 @@
+{
+  "outcome": "ok",
+  "fallback": false,
+  "feed": {
+    "wristfeed": 1,
+    "title": "A very long title that will be truncated",
+    "updated": "2026-11-16T06:40:00Z",
+    "status": "idle",
+    "kind": "stats",
+    "rows": [
+      {
+        "label": "Abcdefghijklmnop",
+        "value": "12345678901234",
+        "status": null
+      }
+    ],
+    "progress": null,
+    "message": null,
+    "stale_after_minutes": 360,
+    "tap_url": null
+  }
+}

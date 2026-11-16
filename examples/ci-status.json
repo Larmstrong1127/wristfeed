@@ -1,0 +1,15 @@
+{
+  "wristfeed": 1,
+  "title": "CI: main",
+  "status": "warn",
+  "kind": "stats",
+  "rows": [
+    {"label": "Build", "value": "pass", "status": "ok"},
+    {"label": "Tests", "value": "2 fail", "status": "bad"},
+    {"label": "Deploy", "value": "held", "status": "warn"}
+  ],
+  "message": null,
+  "updated": "2026-11-16T06:40:00Z",
+  "stale_after_minutes": 60,
+  "tap_url": "https://github.com/OWNER/REPO/actions"
+}

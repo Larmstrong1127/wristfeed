@@ -1,0 +1,11 @@
+{
+  "wristfeed": 1,
+  "title": "A very long title that will be truncated",
+  "updated": "2026-11-16T06:40:00Z",
+  "rows": [
+    {
+      "label": "Abcdefghijklmnop",
+      "value": "12345678901234"
+    }
+  ]
+}

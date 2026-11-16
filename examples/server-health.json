@@ -1,0 +1,9 @@
+{
+  "wristfeed": 1,
+  "title": "Home server",
+  "status": "ok",
+  "kind": "message",
+  "message": "All quiet. 4 services up, disk 61%.",
+  "updated": "2026-11-16T06:40:00Z",
+  "stale_after_minutes": 30
+}

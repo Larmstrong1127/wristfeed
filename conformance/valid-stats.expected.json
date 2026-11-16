@@ -1,0 +1,36 @@
+{
+  "outcome": "ok",
+  "fallback": false,
+  "feed": {
+    "wristfeed": 1,
+    "title": "JARVIS",
+    "updated": "2026-11-16T06:40:00Z",
+    "status": "warn",
+    "kind": "stats",
+    "rows": [
+      {
+        "label": "Apps",
+        "value": "1/5",
+        "status": "bad"
+      },
+      {
+        "label": "Asks",
+        "value": "2",
+        "status": null
+      },
+      {
+        "label": "Systems",
+        "value": "OK",
+        "status": "ok"
+      }
+    ],
+    "progress": {
+      "label": "Apps",
+      "value": 1,
+      "max": 5
+    },
+    "message": null,
+    "stale_after_minutes": 360,
+    "tap_url": "https://example.com/dashboard"
+  }
+}

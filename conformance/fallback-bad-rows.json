@@ -1,0 +1,17 @@
+{
+  "wristfeed": 1,
+  "title": "JARVIS",
+  "updated": "2026-11-16T06:40:00Z",
+  "rows": [
+    {
+      "label": "A",
+      "value": 3
+    },
+    "x",
+    {
+      "label": "B",
+      "value": "2",
+      "status": "purple"
+    }
+  ]
+}

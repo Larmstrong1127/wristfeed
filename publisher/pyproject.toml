@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wristfeed"
+version = "0.1.0"
+description = "Build, validate and publish WristFeed v1 JSON feeds for the Wear OS tile."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Landon Armstrong" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "jsonschema>=4", "ruff"]
+
+[project.scripts]
+wristfeed = "wristfeed.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+wristfeed = ["schema.json"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

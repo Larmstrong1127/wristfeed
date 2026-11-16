@@ -1,0 +1,14 @@
+{
+  "wristfeed": 1,
+  "title": "Job search",
+  "status": "warn",
+  "kind": "progress",
+  "progress": {"label": "Applied", "value": 3, "max": 5},
+  "rows": [
+    {"label": "Applied", "value": "3/5", "status": "warn"},
+    {"label": "Replies", "value": "1", "status": "ok"}
+  ],
+  "updated": "2026-11-16T06:40:00Z",
+  "stale_after_minutes": 720,
+  "tap_url": null
+}

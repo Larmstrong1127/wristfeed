@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/landonarmstrong/wristfeed/schema/v1.json",
+  "title": "WristFeed feed, version 1",
+  "description": "A strictly valid v1 feed: one that parses with no errors and no fallbacks. Unknown fields are allowed (SPEC rule 1).",
+  "type": "object",
+  "required": ["wristfeed", "title", "updated"],
+  "properties": {
+    "wristfeed": {"const": 1},
+    "title": {"type": "string", "pattern": "\\S"},
+    "updated": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$"
+    },
+    "status": {"$ref": "#/$defs/status"},
+    "kind": {"enum": ["stats", "progress", "message"]},
+    "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}},
+    "progress": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["label", "value", "max"],
+          "properties": {
+            "label": {"type": "string"},
+            "value": {"type": "number"},
+            "max": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
+      ]
+    },
+    "message": {"type": ["string", "null"]},
+    "stale_after_minutes": {"type": "integer", "minimum": 1},
+    "tap_url": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[Hh][Tt][Tt][Pp][Ss]://."}
+      ]
+    }
+  },
+  "$defs": {
+    "status": {"enum": ["ok", "warn", "bad", "idle"]},
+    "row": {
+      "type": "object",
+      "required": ["label", "value"],
+      "properties": {
+        "label": {"type": "string"},
+        "value": {"type": "string"},
+        "status": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/status"}]}
+      }
+    }
+  }
+}

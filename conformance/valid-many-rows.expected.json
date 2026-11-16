@@ -1,0 +1,42 @@
+{
+  "outcome": "ok",
+  "fallback": false,
+  "feed": {
+    "wristfeed": 1,
+    "title": "JARVIS",
+    "updated": "2026-11-16T06:40:00Z",
+    "status": "idle",
+    "kind": "stats",
+    "rows": [
+      {
+        "label": "R0",
+        "value": "0",
+        "status": null
+      },
+      {
+        "label": "R1",
+        "value": "1",
+        "status": null
+      },
+      {
+        "label": "R2",
+        "value": "2",
+        "status": null
+      },
+      {
+        "label": "R3",
+        "value": "3",
+        "status": null
+      },
+      {
+        "label": "R4",
+        "value": "4",
+        "status": null
+      }
+    ],
+    "progress": null,
+    "message": null,
+    "stale_after_minutes": 360,
+    "tap_url": null
+  }
+}

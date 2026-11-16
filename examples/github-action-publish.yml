@@ -1,0 +1,37 @@
+# Copy to .github/workflows/wristfeed.yml in your own repo.
+# Needs a repo secret GIST_TOKEN: a token with the "gist" scope.
+# Create the secret gist once by hand (`wristfeed publish feed.json --create`),
+# then set GIST_ID below. Never put secrets in the feed: a secret gist is unlisted, not private.
+name: wristfeed
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GIST_ID: your-gist-id
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "git+https://github.com/larmstrong1127/wristfeed.git#subdirectory=publisher"
+      - name: Build the feed
+        run: |
+          OPEN=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --json number --jq length)
+          STATUS=ok; [ "$OPEN" -gt 10 ] && STATUS=warn
+          wristfeed build --title "Issues" --status "$STATUS" \
+            --row "Open=$OPEN:$STATUS" \
+            --stale-after 90 \
+            --tap-url "https://github.com/$GITHUB_REPOSITORY/issues" \
+            --out feed.json
+          wristfeed validate feed.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Update the gist
+        run: wristfeed publish feed.json --gist "$GIST_ID"
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}

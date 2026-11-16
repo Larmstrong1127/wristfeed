@@ -1,0 +1,16 @@
+{
+  "outcome": "ok",
+  "fallback": false,
+  "feed": {
+    "wristfeed": 1,
+    "title": "JARVIS",
+    "updated": "2026-11-16T06:40:00Z",
+    "status": "ok",
+    "kind": "message",
+    "rows": [],
+    "progress": null,
+    "message": "All quiet",
+    "stale_after_minutes": 360,
+    "tap_url": null
+  }
+}
