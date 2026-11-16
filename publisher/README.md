@@ -27,6 +27,9 @@ wristfeed publish feed.json --gist 0123abcd --filename jarvis.json
 
 # Create a NEW secret gist (only with the explicit flag) and print its raw URL
 wristfeed publish feed.json --create --filename jarvis.json
+
+# Render the watch tile as an SVG (round 454 px screen, like the Wear OS app)
+wristfeed preview feed.json --out tile.svg [--state STATE] [--now ISO] [--size 454]
 ```
 
 - `--row "Label=Value[:status]"` can repeat; the `:status` suffix is read only when it is `ok`, `warn`, `bad` or `idle`, so `Time=12:30` keeps its colon.
@@ -34,6 +37,7 @@ wristfeed publish feed.json --create --filename jarvis.json
 - `build` refuses to write a feed that `validate` would reject.
 - The printed raw URL has no revision hash, so it always serves the newest version. Paste it into the watch app once.
 - `publish` never creates a gist unless you pass `--create`.
+- `preview` picks the screen from the feed and the clock (fresh, stale, malformed, unsupported); `--state fresh|stale|unreachable|malformed|unsupported|loading` forces one. `--now` (RFC 3339) fixes the clock for the age footer, so output is byte-for-byte reproducible. Text uses the same truncation rules as the watch; layout sizes follow `TileLayouts.kt` at 2 px per dp.
 
 `validate` is strict: a feed the watch could still show (because a bad optional field falls back to its default) is reported as a problem so you can fix it.
 

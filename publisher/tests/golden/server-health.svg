@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="454" height="454" viewBox="0 0 454 454" font-family="Roboto, 'Helvetica Neue', Arial, sans-serif">
+<circle cx="227" cy="227" r="227" fill="#000000"/>
+<text x="227" y="170.6" font-size="30" font-weight="bold" fill="#4CAF50" text-anchor="middle" dominant-baseline="central">Home server</text>
+<text x="227" y="216.2" font-size="26" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">All quiet. 4 services up,</text>
+<text x="227" y="247.4" font-size="26" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">disk 61%.</text>
+<text x="227" y="288.2" font-size="22" fill="#BDBDBD" text-anchor="middle" dominant-baseline="central">5m ago</text>
+</svg>

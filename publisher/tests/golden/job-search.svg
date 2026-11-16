@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="454" height="454" viewBox="0 0 454 454" font-family="Roboto, 'Helvetica Neue', Arial, sans-serif">
+<circle cx="227" cy="227" r="227" fill="#000000"/>
+<text x="227" y="129.8" font-size="30" font-weight="bold" fill="#FFB300" text-anchor="middle" dominant-baseline="central">Job search</text>
+<circle cx="227" cy="231.8" r="66" fill="none" stroke="#303030" stroke-width="12"/>
+<path d="M 227 165.8 A 66 66 0 1 1 188.21 285.2" fill="none" stroke="#FFB300" stroke-width="12" stroke-linecap="butt"/>
+<text x="227" y="219.8" font-size="28" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">3/5</text>
+<text x="227" y="248.6" font-size="20" fill="#BDBDBD" text-anchor="middle" dominant-baseline="central">Applied</text>
+<text x="227" y="329" font-size="22" fill="#BDBDBD" text-anchor="middle" dominant-baseline="central">5m ago</text>
+</svg>

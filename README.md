@@ -10,6 +10,15 @@
 
 WristFeed turns any JSON feed URL into a Wear OS tile and watch-face complications. You write a small JSON file from a script, a CI job or a server. You host it anywhere that serves HTTPS. The watch fetches it and shows it.
 
+<p align="center">
+  <img src="docs/img/stats.svg" width="160" alt="stats tile">
+  <img src="docs/img/progress.svg" width="160" alt="progress tile">
+  <img src="docs/img/message.svg" width="160" alt="message tile">
+  <img src="docs/img/stale.svg" width="160" alt="stale tile, dimmed">
+  <img src="docs/img/unreachable.svg" width="160" alt="unreachable screen">
+</p>
+<p align="center"><sub>Stats, progress, message, stale (dimmed) and unreachable, rendered by <code>wristfeed preview</code> from <a href="examples/">examples/</a>.</sub></p>
+
 ## Why
 
 Most "one number on my wrist" apps are hard-wired to one data source. Smart-home dashboards are tied to their platform. Tile libraries still leave you to write the app. WristFeed is one app plus one small format, so anything that can write a file can reach your watch.
@@ -56,6 +65,18 @@ The watch fetches the URL itself. There is no phone app to pair.
    Any HTTPS static host works too.
 
 3. On the watch, open WristFeed, paste or type the raw URL, and add the tile.
+
+## Preview your feed
+
+No watch needed: render the tile as a round 454 px SVG, laid out like the Wear OS app.
+
+```sh
+wristfeed preview feed.json --out tile.svg
+wristfeed preview feed.json --out stale.svg --now 2026-11-16T12:00:00Z   # pick the clock
+wristfeed preview feed.json --out err.svg --state unreachable            # force a screen
+```
+
+`--state` takes `fresh`, `stale`, `unreachable`, `malformed`, `unsupported` or `loading`; `--size` changes the pixel size. The output has no timestamps, so it can be snapshot-tested.
 
 ## Feed format
 

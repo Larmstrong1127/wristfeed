@@ -1,4 +1,7 @@
-"""Command-line interface: ``wristfeed validate | build | publish`` (SPEC.md, Publisher CLI)."""
+"""Command-line interface: ``wristfeed validate | build | publish | preview``.
+
+See SPEC.md, Publisher CLI.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +15,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from wristfeed.feed import KINDS, STATUSES, format_utc, parse, parse_bytes
+from wristfeed.feed import KINDS, STATUSES, format_utc, parse, parse_bytes, parse_rfc3339
+from wristfeed.preview import DEFAULT_SIZE, STATES, render
 
 SECRET_GIST_WARNING = (
     "warning: a secret gist is unlisted, not private. Anyone with the URL can read it; "
@@ -202,6 +206,30 @@ def cmd_publish(args: argparse.Namespace) -> int:
     return 0
 
 
+# ------------------------------------------------------------------- preview
+
+
+def cmd_preview(args: argparse.Namespace) -> int:
+    """Write an SVG of the round tile exactly as TileLayouts.kt lays it out."""
+    if args.now is None:
+        now = datetime.now(timezone.utc)
+    else:
+        parsed = parse_rfc3339(args.now)
+        if parsed is None:
+            raise UsageError(f"--now must be RFC 3339, got {args.now!r}")
+        now = parsed
+    if args.size < 100:
+        raise UsageError("--size must be at least 100")
+    result = parse_bytes(Path(args.file).read_bytes())
+    try:
+        svg = render(result, now, state=args.state, size=args.size)
+    except ValueError as exc:
+        raise UsageError(str(exc)) from exc
+    Path(args.out).write_text(svg, encoding="utf-8", newline="\n")
+    print(f"wrote {args.out}")
+    return 0
+
+
 # ---------------------------------------------------------------------- main
 
 
@@ -234,6 +262,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pub.add_argument("--filename", metavar="NAME", help="file name inside the gist")
     pub.set_defaults(func=cmd_publish)
+
+    pv = sub.add_parser("preview", help="render the watch tile for a feed as an SVG")
+    pv.add_argument("file")
+    pv.add_argument("--out", required=True, metavar="FILE")
+    pv.add_argument("--state", choices=STATES, help="force a screen (default: from feed + clock)")
+    pv.add_argument("--now", metavar="ISO", help="clock for the age footer (default: now)")
+    pv.add_argument("--size", type=int, default=DEFAULT_SIZE, metavar="PX")
+    pv.set_defaults(func=cmd_preview)
     return p
 
 
