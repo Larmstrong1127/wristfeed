@@ -55,7 +55,7 @@ The tile always shows exactly one of these:
 |---|---|---|
 | `loading` | No fetch has finished since setup | "Loading…" |
 | `fresh` | Last fetch parsed and `age < stale_after_minutes` | The layout, plus a footer "Nm ago" or "Nh ago" |
-| `stale` | Parsed, but `age ≥ stale_after_minutes` | The layout dimmed, footer "Old data · Nh ago" |
+| `stale` | Parsed, but `age ≥ stale_after_minutes` | The layout dimmed, footer "Old data · " followed by the normal age label ("20m ago" or "7h ago") |
 | `unreachable` | The last fetch failed (network, HTTP ≠ 200) **and** there's no earlier good copy | "Can't reach feed" |
 | `malformed` | The body isn't a valid v1 feed **and** there's no earlier good copy | "Bad feed" plus a short reason |
 | `unsupported` | `wristfeed` isn't 1 | "Unsupported feed version" |
