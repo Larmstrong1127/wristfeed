@@ -6,8 +6,9 @@ A standalone Wear OS app (no phone app needed) that shows any WristFeed v1 JSON 
 > **Status (2026-11-19):** the first compile succeeded with no errors or warnings, and the 23 core
 > JVM tests pass, including the shared conformance corpus. The debug APK installed and ran on a
 > Galaxy Watch 8 (SM-L330, Android 16 / API 36): it fetched a feed from a secret gist and listed it.
-> The tile and complications have not yet been checked on the device, so the `// VERIFY:` points
-> below about rendering are still open.
+> The **stats tile** renders correctly on the watch: title, three rows with per-row status colors, and
+> the age footer. Still unchecked on a device: the progress-kind ring (VERIFY 6), the message
+> layout, and the three complication types.
 
 ## Layout
 
