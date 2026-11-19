@@ -3,16 +3,18 @@
 A standalone Wear OS app (no phone app needed) that shows any WristFeed v1 JSON feed
 (see `../SPEC.md`) as a tile and as watch-face complications.
 
-> **This build has not been compiled yet.** It was written on a machine with no Android SDK or
-> Gradle. Open it in Android Studio first and fix what the IDE reports. The places most likely to
-> need a touch are marked `// VERIFY:` in the code (list below).
+> **Status (2026-11-19):** the first compile succeeded with no errors or warnings, and the 23 core
+> JVM tests pass, including the shared conformance corpus. The debug APK installed and ran on a
+> Galaxy Watch 8 (SM-L330, Android 16 / API 36): it fetched a feed from a secret gist and listed it.
+> The tile and complications have not yet been checked on the device, so the `// VERIFY:` points
+> below about rendering are still open.
 
 ## Layout
 
 ```
 android/
   settings.gradle.kts, build.gradle.kts, gradle.properties
-  gradle/wrapper/gradle-wrapper.properties   (the wrapper jar is generated on first open)
+  gradlew, gradlew.bat, gradle/wrapper/      Gradle 8.7 wrapper (committed)
   core/   pure Kotlin/JVM, no Android imports: the SPEC contract
     MiniJson.kt     small strict JSON reader (keeps core testable on a plain JVM)
     Feed.kt         model
@@ -31,12 +33,16 @@ android/
 
 ## Build
 
-1. Install Android Studio (Koala or newer) with the Android 14 (API 34) SDK.
-2. **File > Open** the `android/` folder. Studio downloads Gradle 8.7 and creates the wrapper jar.
-   The wrapper (`gradlew`, `gradle-wrapper.jar`) is not committed: Android Studio generates it
-   (or run `gradle wrapper` with Gradle 8.7). CI does not need it; it runs `gradle test assembleDebug`
-   with Gradle 8.7 from `gradle/actions/setup-gradle` (keep that version in sync with
-   `gradle/wrapper/gradle-wrapper.properties`).
+1. Install Android Studio (Koala or newer). Its setup wizard installs the SDK. Once the SDK license
+   is accepted, the build fetches the Android 14 (API 34) platform and build tools itself.
+2. Use **JDK 17** to run Gradle 8.7. Android Studio 2026 bundles Java 25, which Gradle 8.7 cannot
+   run on.
+   - From a shell: `JAVA_HOME=<jdk-17> ANDROID_HOME=<sdk> ./gradlew ...`
+   - In Studio: set **Settings > Build Tools > Gradle > Gradle JDK** to 17.
+
+   The wrapper is committed. CI runs `gradle test assembleDebug` with Gradle 8.7 from
+   `gradle/actions/setup-gradle`; keep that version in sync with
+   `gradle/wrapper/gradle-wrapper.properties`.
 3. Run the JVM tests: `./gradlew :core:test` (no emulator needed). The conformance test reads every
    `<name>.json` + `<name>.expected.json` pair in `../conformance/` and fails if the folder is empty.
 4. Build the app: `./gradlew :app:assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`.

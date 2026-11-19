@@ -6,7 +6,7 @@
 ![android CI](https://img.shields.io/badge/android_CI-pending-lightgrey)
 ![license MIT](https://img.shields.io/badge/license-MIT-blue)
 
-> **Status: v0.1.** The feed format and the Python publisher are working. The Wear OS app is written but has not yet been compiled or run on a device.
+> **Status: v0.1.** The feed format and the Python publisher are working. The Wear OS app builds and runs on a Galaxy Watch 8 (Wear OS, Android 16); first device run 2026-11-19.
 
 WristFeed turns any JSON feed URL into a Wear OS tile and watch-face complications. You write a small JSON file from a script, a CI job or a server. You host it anywhere that serves HTTPS. The watch fetches it and shows it.
 
