@@ -1,16 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder icon: a ring with a dot. Replace with a real launcher icon before release. -->
+<!-- WristFeed launcher icon: a dark watch face, a 3/4 progress arc in the project accent, and three
+     feed rows. Palette from docs/index.html (surface #171c19, line #27302b, text #e8ece9,
+     muted #9aa69f, accent #7ee0a3, warn #f2c063). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="48dp"
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
+    <!-- face -->
+    <path
+        android:fillColor="#171C19"
+        android:pathData="M24,0a24,24 0,1 1,-0.01 0z" />
+    <!-- ring track -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#4CAF50"
-        android:strokeWidth="5"
-        android:pathData="M24,6a18,18 0,1 1,-0.01 0z" />
+        android:strokeColor="#27302B"
+        android:strokeWidth="3.2"
+        android:pathData="M24,7a17,17 0,1 1,-0.01 0z" />
+    <!-- progress: three quarters, clockwise from 12 o'clock -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M24,18a6,6 0,1 1,-0.01 0z" />
+        android:fillColor="#00000000"
+        android:strokeColor="#7EE0A3"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M24,7A17,17 0,1 1,7,24" />
+    <!-- feed rows -->
+    <path
+        android:strokeColor="#E8ECE9"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M17.5,19.5H30.5" />
+    <path
+        android:strokeColor="#9AA69F"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M17.5,24.5H27.5" />
+    <path
+        android:strokeColor="#F2C063"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M17.5,29.5H23.5" />
 </vector>

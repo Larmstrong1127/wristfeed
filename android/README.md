@@ -6,9 +6,16 @@ A standalone Wear OS app (no phone app needed) that shows any WristFeed v1 JSON 
 > **Status (2026-11-19):** the first compile succeeded with no errors or warnings, and the 23 core
 > JVM tests pass, including the shared conformance corpus. The debug APK installed and ran on a
 > Galaxy Watch 8 (SM-L330, Android 16 / API 36): it fetched a feed from a secret gist and listed it.
-> The **stats tile** renders correctly on the watch: title, three rows with per-row status colors, and
-> the age footer. Still unchecked on a device: the progress-kind ring (VERIFY 6), the message
-> layout, and the three complication types.
+> **Checked on the watch (screenshots):**
+> - **stats:** title, three rows with per-row status colors, and the age footer
+> - **progress:** the ring is sized and placed correctly (VERIFY 6 closed)
+> - **message:** a full 60-character message wraps to 2 lines inside the round screen and is cut
+>   with "…"
+> - **stale:** colors at half brightness and the "Old data · 89h ago" footer
+> - **"On tile":** switches the tile feed; deleting the tile feed falls back to the first feed
+> - **launcher icon:** shows correctly in the app list
+>
+> **Still unchecked on a device:** the three complication types, and the tile-picker preview image.
 
 ## Layout
 
@@ -62,7 +69,9 @@ android/
 ## Use
 
 1. Open WristFeed on the watch, tap **Add feed** and type or dictate the https URL
-   (a raw secret-gist URL works; feeds must never contain secrets).
+   (a raw secret-gist URL works; feeds must never contain secrets). GitHub caches a raw gist
+   file for up to 5 minutes, so a refresh right after a publish can still show the previous copy.
+   Size `stale_after_minutes` for that (well above 5).
 2. Add the tile: long-press the watch face's tile area (or swipe to the end of the tiles) >
    **+ Add tile** > WristFeed. The tile shows the first feed, or the one you marked **On tile**.
 3. Add a complication: long-press the watch face > **Customize** > a complication slot >
@@ -98,5 +107,5 @@ android/
 8. `MainActivity.kt`: `RemoteActivityHelper(context).startRemoteActivity(intent, null)`.
 9. `MainActivity.kt`: `RemoteInputIntentHelper.createActionRemoteInputIntent` / `putRemoteInputsExtra`.
 
-Not done yet: a real launcher icon and tile preview image (the current ones are placeholder
-vectors), per-tile feed choice through the system tile-config screen, and screenshots.
+The launcher icon and tile preview are vectors in the project palette (`res/drawable/`). Not done
+yet: per-tile feed choice through the system tile-config screen, and screenshots in the README.

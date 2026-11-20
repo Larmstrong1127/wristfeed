@@ -1,16 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder icon: a ring with a dot. Replace with a real launcher icon before release. -->
+<!-- Tile picker preview: a mock of the stats tile (accent title, three label/value rows in the
+     status colors, the age footer) on a round dark face. Shapes only, so it stays crisp at any size. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="48"
-    android:viewportHeight="48">
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#4CAF50"
-        android:strokeWidth="5"
-        android:pathData="M24,6a18,18 0,1 1,-0.01 0z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M24,18a6,6 0,1 1,-0.01 0z" />
+        android:fillColor="#0B0D0C"
+        android:pathData="M48,0a48,48 0,1 1,-0.01 0z" />
+    <!-- title -->
+    <path android:strokeColor="#7EE0A3" android:strokeWidth="5" android:strokeLineCap="round"
+        android:pathData="M37,30H59" />
+    <!-- row 1: label + ok value -->
+    <path android:strokeColor="#9AA69F" android:strokeWidth="3.4" android:strokeLineCap="round"
+        android:pathData="M31,43H47" />
+    <path android:strokeColor="#7EE0A3" android:strokeWidth="3.4" android:strokeLineCap="round"
+        android:pathData="M53,43H63" />
+    <!-- row 2: label + plain value -->
+    <path android:strokeColor="#9AA69F" android:strokeWidth="3.4" android:strokeLineCap="round"
+        android:pathData="M33,52H47" />
+    <path android:strokeColor="#E8ECE9" android:strokeWidth="3.4" android:strokeLineCap="round"
+        android:pathData="M53,52H59" />
+    <!-- row 3: label + warn value -->
+    <path android:strokeColor="#9AA69F" android:strokeWidth="3.4" android:strokeLineCap="round"
+        android:pathData="M30,61H47" />
+    <path android:strokeColor="#F2C063" android:strokeWidth="3.4" android:strokeLineCap="round"
+        android:pathData="M53,61H65" />
+    <!-- footer -->
+    <path android:strokeColor="#4A544F" android:strokeWidth="2.6" android:strokeLineCap="round"
+        android:pathData="M42,72H54" />
 </vector>
