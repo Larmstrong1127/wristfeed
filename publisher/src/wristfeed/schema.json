@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/landonarmstrong/wristfeed/schema/v1.json",
+  "$id": "https://github.com/Larmstrong1127/wristfeed/schema/v1.json",
   "title": "WristFeed feed, version 1",
   "description": "A strictly valid v1 feed: one that parses with no errors and no fallbacks. Unknown fields are allowed (SPEC rule 1).",
   "type": "object",

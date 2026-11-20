@@ -19,7 +19,8 @@ NOW = datetime(2026, 11, 16, 7, 0, tzinfo=timezone.utc)
 
 
 def feed(**kw):
-    doc = {"wristfeed": 1, "title": "JARVIS · Thu", "updated": "2026-11-16T06:40:00Z", "kind": "dashboard", **kw}
+    doc = {"wristfeed": 1, "title": "Today · Thu", "updated": "2026-11-16T06:40:00Z",
+           "kind": "dashboard", **kw}
     r = parse(doc)
     assert r.outcome == "ok"
     return r.feed
@@ -53,12 +54,14 @@ def test_build_alert_option_parses_trailing_status() -> None:
 
 
 def test_preview_draws_bezel_headline_alert_and_chips() -> None:
-    f = feed(status="warn", headline="Pin Shorts Factory on GitHub", alert={"text": "1 app left", "status": "bad"},
-             rows=[{"label": "Asks", "value": "3"}, {"label": "Replies", "value": "0", "status": "ok"}],
-             progress={"label": "Apps", "value": 4, "max": 5})
+    f = feed(status="warn", headline="Review 2 pull requests",
+             alert={"text": "Deploy failed", "status": "bad"},
+             rows=[{"label": "Inbox", "value": "3"},
+                   {"label": "Streak", "value": "2 wk", "status": "ok"}],
+             progress={"label": "Tasks", "value": 4, "max": 5})
     svg = render(parse(f.to_dict() | {"updated": "2026-11-16T06:40:00Z"}), NOW)
-    assert "JARVIS · THU" in svg and "Pin Shorts Factory" in svg
-    assert "● 1 app left" in svg and "ASKS" in svg and "REPLIES" in svg
+    assert "TODAY · THU" in svg and ">Review 2 pull" in svg  # the headline wraps to 2 lines
+    assert "● Deploy failed" in svg and "INBOX" in svg and "STREAK" in svg
     assert svg.count("<circle") >= 2 and "<path" in svg  # face + bezel track, bezel arc
 
 

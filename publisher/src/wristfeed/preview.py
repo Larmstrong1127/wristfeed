@@ -193,7 +193,12 @@ def dashboard_column(feed: Feed, foot: str, dimmed: bool) -> tuple[list[Element]
     if chips:
         items = [
             (
-                Text(r.value, 16, dim(status_color(r.status), dimmed) if r.status else body, bold=True),
+                Text(
+                    r.value,
+                    16,
+                    dim(status_color(r.status), dimmed) if r.status else body,
+                    bold=True,
+                ),
                 Text(r.label.upper(), 9, muted),
             )
             for r in chips
@@ -284,7 +289,9 @@ def _arc(cx: float, cy: float, r: float, deg: float, color: int, sw: float) -> s
     )
 
 
-def render_elements(col: list[Element], size: int = DEFAULT_SIZE, bezel: Bezel | None = None) -> str:
+def render_elements(
+    col: list[Element], size: int = DEFAULT_SIZE, bezel: Bezel | None = None
+) -> str:
     k = size / DP_PER_SCREEN
     c = size / 2
     total = sum(_height(e) for e in col) * k

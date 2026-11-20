@@ -265,7 +265,9 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--progress", metavar="Label=V/MAX")
     b.add_argument("--message")
     b.add_argument("--headline", help="dashboard: the one thing to know or do next")
-    b.add_argument("--alert", metavar="Text[:status]", help="dashboard: one line that needs attention")
+    b.add_argument(
+        "--alert", metavar="Text[:status]", help="dashboard: one line that needs attention"
+    )
     b.add_argument("--stale-after", type=int, metavar="N")
     b.add_argument("--tap-url", metavar="U")
     b.add_argument("--out", metavar="FILE")

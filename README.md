@@ -2,8 +2,8 @@
 
 **Put any feed on your wrist.**
 
-![publisher CI](https://img.shields.io/badge/publisher_CI-pending-lightgrey)
-![android CI](https://img.shields.io/badge/android_CI-pending-lightgrey)
+[![publisher CI](https://github.com/Larmstrong1127/wristfeed/actions/workflows/publisher.yml/badge.svg)](https://github.com/Larmstrong1127/wristfeed/actions/workflows/publisher.yml)
+[![android CI](https://github.com/Larmstrong1127/wristfeed/actions/workflows/android.yml/badge.svg)](https://github.com/Larmstrong1127/wristfeed/actions/workflows/android.yml)
 ![license MIT](https://img.shields.io/badge/license-MIT-blue)
 
 > **Status: v0.1.** The feed format and the Python publisher are working. The Wear OS app builds and runs on a Galaxy Watch 8 (Wear OS, Android 16); first device run 2026-11-19.

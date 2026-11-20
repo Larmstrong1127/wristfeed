@@ -1,13 +1,13 @@
 name: android
 
-# No Gradle wrapper jar is committed, so CI uses a provisioned Gradle whose version must
-# match distributionUrl in android/gradle/wrapper/gradle-wrapper.properties (8.7).
+# Uses the committed Gradle 8.7 wrapper (android/gradlew). Gradle 8.7 needs JDK 17-21.
+# The core tests read ../conformance, so a change there runs this workflow too.
 
 on:
   push:
-    paths: ["android/**", ".github/workflows/android.yml"]
+    paths: ["android/**", "conformance/**", ".github/workflows/android.yml"]
   pull_request:
-    paths: ["android/**", ".github/workflows/android.yml"]
+    paths: ["android/**", "conformance/**", ".github/workflows/android.yml"]
 
 jobs:
   build:
@@ -22,11 +22,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.7"
-      - run: gradle test assembleDebug
+      - run: ./gradlew test assembleDebug --console=plain
       - uses: actions/upload-artifact@v4
         with:
           name: wristfeed-debug-apk
-          path: android/**/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

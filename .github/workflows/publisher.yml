@@ -2,9 +2,9 @@ name: publisher
 
 on:
   push:
-    paths: ["publisher/**", "SPEC.md", "examples/**", ".github/workflows/publisher.yml"]
+    paths: ["publisher/**", "conformance/**", "SPEC.md", "examples/**", ".github/workflows/publisher.yml"]
   pull_request:
-    paths: ["publisher/**", "SPEC.md", "examples/**", ".github/workflows/publisher.yml"]
+    paths: ["publisher/**", "conformance/**", "SPEC.md", "examples/**", ".github/workflows/publisher.yml"]
 
 jobs:
   test:

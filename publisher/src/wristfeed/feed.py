@@ -129,7 +129,9 @@ class Feed:
             "stale_after_minutes": self.stale_after_minutes,
             "tap_url": self.tap_url,
             "headline": self.headline,
-            "alert": None if self.alert is None else {"text": self.alert.text, "status": self.alert.status},
+            "alert": None
+            if self.alert is None
+            else {"text": self.alert.text, "status": self.alert.status},
         }
 
 
@@ -542,13 +544,19 @@ def display_headline(feed: Feed) -> str | None:
 
 
 def display_alert(feed: Feed) -> Alert | None:
-    return None if feed.alert is None else Alert(truncate(feed.alert.text, ALERT_MAX_CHARS), feed.alert.status)
+    if feed.alert is None:
+        return None
+    return Alert(truncate(feed.alert.text, ALERT_MAX_CHARS), feed.alert.status)
 
 
 def display_chips(feed: Feed) -> list[Row]:
     """Dashboard chips: the first 3 rows with the tighter chip limits."""
     return [
-        Row(truncate(r.label, CHIP_LABEL_MAX_CHARS), truncate(r.value, CHIP_VALUE_MAX_CHARS), r.status)
+        Row(
+            truncate(r.label, CHIP_LABEL_MAX_CHARS),
+            truncate(r.value, CHIP_VALUE_MAX_CHARS),
+            r.status,
+        )
         for r in feed.rows[:MAX_ROWS_SHOWN]
     ]
 
