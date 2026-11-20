@@ -17,6 +17,8 @@
     "progress": null,
     "message": null,
     "stale_after_minutes": 360,
-    "tap_url": null
+    "tap_url": null,
+    "headline": null,
+    "alert": null
   }
 }

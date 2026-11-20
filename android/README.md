@@ -7,6 +7,10 @@ A standalone Wear OS app (no phone app needed) that shows any WristFeed v1 JSON 
 > JVM tests pass, including the shared conformance corpus. The debug APK installed and ran on a
 > Galaxy Watch 8 (SM-L330, Android 16 / API 36): it fetched a feed from a secret gist and listed it.
 > **Checked on the watch (screenshots):**
+> - **dashboard:** the bezel ring, eyebrow, two-line headline, alert line and three chips. A
+>   41-character headline fits in two lines in the 172 dp box; a 44-character all-capitals one ends
+>   in "…". Publishers should aim for about 36 characters. Overflowing text is ellipsized, never
+>   clipped silently.
 > - **stats:** title, three rows with per-row status colors, and the age footer
 > - **progress:** the ring is sized and placed correctly (VERIFY 6 closed)
 > - **message:** a full 60-character message wraps to 2 lines inside the round screen and is cut

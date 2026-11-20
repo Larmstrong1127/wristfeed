@@ -104,5 +104,11 @@ class ConformanceTest {
         assertEquals("message", e["message"], f.message)
         assertEquals("stale_after_minutes", (e["stale_after_minutes"] as Number).toInt(), f.staleAfterMinutes)
         assertEquals("tap_url", e["tap_url"], f.tapUrl)
+        // Dashboard fields. Every expectation carries them (null when absent).
+        if (!e.containsKey("headline") || !e.containsKey("alert")) throw AssertionError("expectation lacks headline/alert")
+        assertEquals("headline", e["headline"], f.headline)
+        val a = e["alert"] as Map<*, *>?
+        val got = f.alert?.let { mapOf("text" to it.text, "status" to it.status.name.lowercase()) }
+        assertEquals("alert", a?.let { mapOf("text" to it["text"], "status" to it["status"]) }, got)
     }
 }

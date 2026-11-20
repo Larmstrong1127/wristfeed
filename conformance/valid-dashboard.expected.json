@@ -1,0 +1,41 @@
+{
+  "outcome": "ok",
+  "fallback": false,
+  "feed": {
+    "wristfeed": 1,
+    "title": "JARVIS · Thu",
+    "updated": "2026-11-16T06:40:00Z",
+    "status": "warn",
+    "kind": "dashboard",
+    "rows": [
+      {
+        "label": "Asks",
+        "value": "3",
+        "status": null
+      },
+      {
+        "label": "Outreach",
+        "value": "0/2",
+        "status": "bad"
+      },
+      {
+        "label": "Replies",
+        "value": "0",
+        "status": null
+      }
+    ],
+    "progress": {
+      "label": "Apps",
+      "value": 4,
+      "max": 5
+    },
+    "message": null,
+    "stale_after_minutes": 360,
+    "tap_url": null,
+    "headline": "Pin Shorts Factory on GitHub · 2m",
+    "alert": {
+      "text": "1 app left, 2 days",
+      "status": "bad"
+    }
+  }
+}

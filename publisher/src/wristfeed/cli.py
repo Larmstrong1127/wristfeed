@@ -91,6 +91,14 @@ def build_feed(args: argparse.Namespace, now: datetime | None = None) -> dict[st
         doc["progress"] = parse_progress_arg(args.progress)
     if args.message is not None:
         doc["message"] = args.message
+    if getattr(args, "headline", None) is not None:
+        doc["headline"] = args.headline
+    if getattr(args, "alert", None) is not None:
+        text, sep, st = args.alert.rpartition(":")
+        if sep and st in STATUSES:
+            doc["alert"] = {"text": text, "status": st}
+        else:
+            doc["alert"] = {"text": args.alert}
     doc["updated"] = format_utc(now or datetime.now(timezone.utc))
     if args.stale_after is not None:
         doc["stale_after_minutes"] = args.stale_after
@@ -256,6 +264,8 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--row", action="append", metavar="Label=Value[:status]")
     b.add_argument("--progress", metavar="Label=V/MAX")
     b.add_argument("--message")
+    b.add_argument("--headline", help="dashboard: the one thing to know or do next")
+    b.add_argument("--alert", metavar="Text[:status]", help="dashboard: one line that needs attention")
     b.add_argument("--stale-after", type=int, metavar="N")
     b.add_argument("--tap-url", metavar="U")
     b.add_argument("--out", metavar="FILE")

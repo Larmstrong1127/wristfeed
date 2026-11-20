@@ -22,6 +22,9 @@ from wristfeed.feed import (
     ParseResult,
     age,
     age_label,
+    display_alert,
+    display_chips,
+    display_headline,
     display_message,
     display_rows,
     display_state,
@@ -117,8 +120,31 @@ class Ring:
     accent: int
 
 
-Element = Text | Spacer | StatRow | Ring
+@dataclass
+class Chips:
+    """Dashboard chips: up to 3 (value, label) pairs side by side."""
+
+    items: list[tuple[Text, Text]]
+
+
+@dataclass
+class Bezel:
+    """Dashboard progress drawn around the screen edge."""
+
+    fraction: float
+    accent: int
+    track: int
+
+
+Element = Text | Spacer | StatRow | Ring | Chips
 RING_DP = 72.0
+# Dashboard sizes: TileLayouts.kt dashboard() uses the same numbers.
+DASH_TRACK = 0x262626
+DASH_MUTED = 0x9E9E9E
+DASH_BEZEL_DP = 5.0
+DASH_BEZEL_INSET_DP = 4.0
+DASH_CHIP_DP = 56.0
+DASH_HEADLINE_DP = 172.0
 RING_THICK_DP = 6.0
 MAX_TEXT_DP = 200.0  # wrap width estimate for multi-line text
 
@@ -147,7 +173,38 @@ def _height(e: Element) -> float:
         return e.h
     if isinstance(e, StatRow):
         return max(e.label.sp, e.value.sp) * LINE
+    if isinstance(e, Chips):
+        return max((v.sp + lab.sp) * LINE for v, lab in e.items) if e.items else 0.0
     return RING_DP
+
+
+def dashboard_column(feed: Feed, foot: str, dimmed: bool) -> tuple[list[Element], Bezel | None]:
+    """Mirror of TileLayouts.dashboard(): eyebrow, headline, alert, chips, footer, bezel ring."""
+    accent = dim(status_color(feed.status), dimmed)
+    body = dim(WHITE, dimmed)
+    muted = dim(DASH_MUTED, dimmed)
+    col: list[Element] = [Text(display_title(feed).upper(), 11, muted, bold=True), Spacer(4)]
+    headline = display_headline(feed)
+    col.append(Text(headline or display_title(feed), 17, body, bold=True, max_lines=2))
+    alert = display_alert(feed)
+    if alert is not None:
+        col += [Spacer(6), Text("● " + alert.text, 12, dim(status_color(alert.status), dimmed))]
+    chips = display_chips(feed)
+    if chips:
+        items = [
+            (
+                Text(r.value, 16, dim(status_color(r.status), dimmed) if r.status else body, bold=True),
+                Text(r.label.upper(), 9, muted),
+            )
+            for r in chips
+        ]
+        col += [Spacer(10), Chips(items)]
+    col += [Spacer(6), Text(foot, 10, muted)]
+    p = feed.progress
+    bezel = None
+    if p is not None:
+        bezel = Bezel(p.value / p.max if p.max else 0.0, accent, dim(DASH_TRACK, dimmed))
+    return col, bezel
 
 
 def message_column(headline: str, detail: str | None) -> list[Element]:
@@ -227,7 +284,7 @@ def _arc(cx: float, cy: float, r: float, deg: float, color: int, sw: float) -> s
     )
 
 
-def render_elements(col: list[Element], size: int = DEFAULT_SIZE) -> str:
+def render_elements(col: list[Element], size: int = DEFAULT_SIZE, bezel: Bezel | None = None) -> str:
     k = size / DP_PER_SCREEN
     c = size / 2
     total = sum(_height(e) for e in col) * k
@@ -237,6 +294,13 @@ def render_elements(col: list[Element], size: int = DEFAULT_SIZE) -> str:
         f' viewBox="0 0 {size} {size}" font-family="{FONT}">',
         f'<circle cx="{_fmt(c)}" cy="{_fmt(c)}" r="{_fmt(c)}" fill="#000000"/>',
     ]
+    if bezel is not None:
+        sw = DASH_BEZEL_DP * k
+        r = c - (DASH_BEZEL_INSET_DP + DASH_BEZEL_DP / 2) * k
+        parts.append(_arc(c, c, r, 360, bezel.track, sw))
+        sweep = min(max(bezel.fraction, 0.0), 1.0) * 360.0
+        if sweep > 0:
+            parts.append(_arc(c, c, r, sweep, bezel.accent, sw))
     for e in col:
         h = _height(e) * k
         if isinstance(e, Text):
@@ -250,6 +314,13 @@ def render_elements(col: list[Element], size: int = DEFAULT_SIZE) -> str:
             parts += _text_svg(
                 e.value, left + lw + gap, y + (h - e.value.sp * LINE * k) / 2, k, "start"
             )
+        elif isinstance(e, Chips):
+            w = DASH_CHIP_DP * k
+            left = c - w * len(e.items) / 2
+            for i, (v, lab) in enumerate(e.items):
+                cx = left + w * i + w / 2
+                parts += _text_svg(v, cx, y, k)
+                parts += _text_svg(lab, cx, y + v.sp * LINE * k, k)
         elif isinstance(e, Ring):
             r = (RING_DP - RING_THICK_DP) / 2 * k
             cy = y + h / 2
@@ -295,6 +366,9 @@ def render(
         else:  # forced state: same label, prefix as in feed.footer()
             label = age_label(age(feed, fetched, now))
             foot = label if state == "fresh" else f"Old data · {label}"
+        if feed.kind == "dashboard":
+            col, bezel = dashboard_column(feed, foot, dimmed=state == "stale")
+            return render_elements(col, size, bezel)
         col = feed_column(feed, foot, dimmed=state == "stale")
     elif state == "malformed":
         errs = result.errors or result.problems

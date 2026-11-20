@@ -29,7 +29,7 @@ MAX_BYTES = 64 * 1024  # Rule 5. DECISION: 65536 bytes allowed, 65537 is malform
 CLOCK_SKEW_TOLERANCE = timedelta(minutes=2)  # Rule 4.
 
 STATUSES = ("ok", "warn", "bad", "idle")
-KINDS = ("stats", "progress", "message")
+KINDS = ("stats", "progress", "message", "dashboard")
 DEFAULT_STATUS = "idle"
 DEFAULT_KIND = "stats"
 DEFAULT_STALE_AFTER_MINUTES = 360
@@ -45,6 +45,11 @@ TITLE_MAX_CHARS = 24
 ROW_LABEL_MAX_CHARS = 12
 ROW_VALUE_MAX_CHARS = 10
 MESSAGE_MAX_CHARS = 60
+HEADLINE_MAX_CHARS = 44  # dashboard
+ALERT_MAX_CHARS = 32  # dashboard
+CHIP_LABEL_MAX_CHARS = 8  # dashboard chips
+CHIP_VALUE_MAX_CHARS = 6
+DEFAULT_ALERT_STATUS = "warn"
 ELLIPSIS = "…"
 
 Outcome = Literal["ok", "malformed", "unsupported"]
@@ -84,6 +89,12 @@ class Progress:
 
 
 @dataclass(frozen=True)
+class Alert:
+    text: str
+    status: str = DEFAULT_ALERT_STATUS
+
+
+@dataclass(frozen=True)
 class Feed:
     version: int
     title: str
@@ -95,6 +106,8 @@ class Feed:
     message: str | None = None
     stale_after_minutes: int = DEFAULT_STALE_AFTER_MINUTES
     tap_url: str | None = None
+    headline: str | None = None
+    alert: Alert | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Normalized view used by the conformance corpus (``updated`` as ``...Z``)."""
@@ -115,6 +128,8 @@ class Feed:
             "message": self.message,
             "stale_after_minutes": self.stale_after_minutes,
             "tap_url": self.tap_url,
+            "headline": self.headline,
+            "alert": None if self.alert is None else {"text": self.alert.text, "status": self.alert.status},
         }
 
 
@@ -307,6 +322,31 @@ def _parse_message(doc: dict[str, Any], problems: list[Problem]) -> str | None:
     return None
 
 
+def _parse_headline(doc: dict[str, Any], problems: list[Problem]) -> str | None:
+    h = doc.get("headline")
+    if h is None or isinstance(h, str):
+        return h
+    _fallback(problems, "headline", "must be a string or null")
+    return None
+
+
+def _parse_alert(doc: dict[str, Any], problems: list[Problem]) -> Alert | None:
+    """DECISION: an alert needs a non-blank string ``text``; a missing ``status`` is ``warn``,
+    a wrong one falls back to ``warn`` (the alert itself is kept)."""
+    a = doc.get("alert")
+    if a is None:
+        return None
+    text = a.get("text") if isinstance(a, dict) else None
+    if not isinstance(text, str) or not text.strip():
+        _fallback(problems, "alert", "must be null or an object with a non-empty string text")
+        return None
+    status = a.get("status", DEFAULT_ALERT_STATUS)
+    if status not in STATUSES:
+        _fallback(problems, "alert.status", f"must be one of {', '.join(STATUSES)}")
+        status = DEFAULT_ALERT_STATUS
+    return Alert(text, status)
+
+
 def _parse_stale_after(doc: dict[str, Any], problems: list[Problem]) -> int:
     if "stale_after_minutes" not in doc:
         return DEFAULT_STALE_AFTER_MINUTES
@@ -350,6 +390,8 @@ def parse(doc: Any) -> ParseResult:
     message = _parse_message(doc, problems)
     stale_after = _parse_stale_after(doc, problems)
     tap_url = _parse_tap_url(doc, problems)
+    headline = _parse_headline(doc, problems)
+    alert = _parse_alert(doc, problems)
 
     if title is None or updated is None:
         return ParseResult("malformed", None, problems)
@@ -364,6 +406,8 @@ def parse(doc: Any) -> ParseResult:
         message=message,
         stale_after_minutes=stale_after,
         tap_url=tap_url,
+        headline=headline,
+        alert=alert,
     )
     return ParseResult("ok", feed, problems)
 
@@ -491,6 +535,22 @@ def display_rows(feed: Feed) -> list[Row]:
 
 def display_message(feed: Feed) -> str | None:
     return None if feed.message is None else truncate(feed.message, MESSAGE_MAX_CHARS)
+
+
+def display_headline(feed: Feed) -> str | None:
+    return None if feed.headline is None else truncate(feed.headline, HEADLINE_MAX_CHARS)
+
+
+def display_alert(feed: Feed) -> Alert | None:
+    return None if feed.alert is None else Alert(truncate(feed.alert.text, ALERT_MAX_CHARS), feed.alert.status)
+
+
+def display_chips(feed: Feed) -> list[Row]:
+    """Dashboard chips: the first 3 rows with the tighter chip limits."""
+    return [
+        Row(truncate(r.label, CHIP_LABEL_MAX_CHARS), truncate(r.value, CHIP_VALUE_MAX_CHARS), r.status)
+        for r in feed.rows[:MAX_ROWS_SHOWN]
+    ]
 
 
 def format_number(v: float) -> str:

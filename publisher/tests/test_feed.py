@@ -288,6 +288,8 @@ def test_rule2_missing_optionals_use_defaults() -> None:
         "message": None,
         "stale_after_minutes": 360,
         "tap_url": None,
+        "headline": None,
+        "alert": None,
     }
 
 

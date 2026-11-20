@@ -31,6 +31,8 @@
     },
     "message": null,
     "stale_after_minutes": 360,
-    "tap_url": "https://example.com/dashboard"
+    "tap_url": "https://example.com/dashboard",
+    "headline": null,
+    "alert": null
   }
 }

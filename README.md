@@ -95,7 +95,9 @@ The full contract is in [SPEC.md](SPEC.md). In short:
 ```
 
 - Required: `wristfeed` (always `1`), `title`, `updated` (RFC 3339 UTC).
-- `kind` picks the layout: `stats` (up to 3 rows), `progress` (a ring), or `message` (one line).
+- `kind` picks the layout: `stats` (up to 3 rows), `progress` (a ring), `message` (one line), or
+  `dashboard`: a ring around the screen edge, a two-line `headline`, an optional `alert` line and
+  three chips (SPEC "Dashboard").
 - `status` is `ok`, `warn`, `bad` or `idle` and colors the tile.
 - Unknown fields are ignored. Bad optional fields fall back to defaults.
 - The tile always shows one state: loading, fresh, stale, unreachable, malformed or unsupported. It never goes blank.

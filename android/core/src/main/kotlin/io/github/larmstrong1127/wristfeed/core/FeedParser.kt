@@ -39,7 +39,9 @@ object FeedParser {
         (v as? Number)?.toDouble()?.takeIf { it.isFinite() && Math.abs(it) <= MAX_NUMBER_MAGNITUDE }
 
     private val STATUSES = mapOf("ok" to Status.OK, "warn" to Status.WARN, "bad" to Status.BAD, "idle" to Status.IDLE)
-    private val KINDS = mapOf("stats" to Kind.STATS, "progress" to Kind.PROGRESS, "message" to Kind.MESSAGE)
+    private val KINDS = mapOf(
+        "stats" to Kind.STATS, "progress" to Kind.PROGRESS, "message" to Kind.MESSAGE, "dashboard" to Kind.DASHBOARD,
+    )
 
     /**
      * Parses raw bytes. [fetchedAtMs] is the download time, used by the clock-skew guard
@@ -138,6 +140,28 @@ object FeedParser {
         val tapUrl = (rawTap as? String)?.takeIf { it.length > 8 && it.substring(0, 8).equals("https://", ignoreCase = true) }
         if (rawTap != null && tapUrl == null) fallback = true
 
+        // Dashboard fields (SPEC "Dashboard"), same decisions as the Python reference.
+        val rawHeadline = obj["headline"]
+        val headline = rawHeadline as? String
+        if (rawHeadline != null && headline == null) fallback = true
+
+        var alert: Alert? = null
+        val rawAlert = obj["alert"]
+        if (rawAlert != null) {
+            val m = rawAlert as? Map<*, *>
+            val text = (m?.get("text") as? String)?.takeIf { it.isNotBlank() }
+            if (text == null) {
+                fallback = true
+            } else {
+                var st = Status.WARN
+                if (m.containsKey("status")) {
+                    val parsed = (m["status"] as? String)?.let { STATUSES[it] }
+                    if (parsed == null) fallback = true else st = parsed
+                }
+                alert = Alert(text, st)
+            }
+        }
+
         return ParseResult.Ok(
             Feed(
                 title = title,
@@ -149,6 +173,8 @@ object FeedParser {
                 message = message,
                 staleAfterMinutes = staleAfter,
                 tapUrl = tapUrl,
+                headline = headline,
+                alert = alert,
             ),
             fallback,
         )

@@ -10,6 +10,12 @@ object Display {
     const val MAX_MESSAGE = 60
     const val MAX_ROWS = 3
 
+    /** Dashboard limits (SPEC "Dashboard"; same as the Python reference). */
+    const val MAX_HEADLINE = 44
+    const val MAX_ALERT = 32
+    const val MAX_CHIP_LABEL = 8
+    const val MAX_CHIP_VALUE = 6
+
     /** Complication SHORT_TEXT text and title limits (SPEC "Complications"). */
     const val MAX_SHORT_TEXT = 7
     const val MAX_SHORT_TITLE = 7
@@ -51,6 +57,15 @@ object Display {
 
     fun message(feed: Feed): String? = feed.message?.let { truncate(it, MAX_MESSAGE) }
 
+    fun headline(feed: Feed): String? = feed.headline?.let { truncate(it, MAX_HEADLINE) }
+
+    fun alert(feed: Feed): Alert? = feed.alert?.let { Alert(truncate(it.text, MAX_ALERT), it.status) }
+
+    /** Dashboard chips: the first 3 rows with the tighter chip limits. */
+    fun chips(feed: Feed): List<Row> = feed.rows.take(MAX_ROWS).map {
+        Row(truncate(it.label, MAX_CHIP_LABEL), truncate(it.value, MAX_CHIP_VALUE), it.status)
+    }
+
     /**
      * SPEC "Number display": whole and |d| < 1e15 -> plain integer ("1/5"); otherwise 6 significant
      * digits (HALF_UP on the exact binary value), trailing zeros stripped, plain notation.
@@ -65,7 +80,7 @@ object Display {
     /** SHORT_TEXT text: first row's value (stats), value/max (progress), title (message). */
     fun shortText(feed: Feed): String = truncate(
         when (feed.kind) {
-            Kind.STATS -> feed.rows.firstOrNull()?.value ?: feed.title
+            Kind.STATS, Kind.DASHBOARD -> feed.rows.firstOrNull()?.value ?: feed.title
             Kind.PROGRESS -> feed.progress?.let { progressText(it) } ?: feed.title
             Kind.MESSAGE -> feed.title
         },
@@ -85,11 +100,14 @@ object Display {
             val label = truncate(p.label, MAX_LABEL)
             "${title(feed)}: " + listOf(label, progressText(p)).filter { it.isNotEmpty() }.joinToString(" ")
         } ?: title(feed)
-        Kind.STATS -> {
-            val rows = shownRows(feed)
-            if (rows.isEmpty()) title(feed)
-            else "${title(feed)}: " + rows.joinToString(" $DOT ") { "${it.label} ${it.value}" }
-        }
+        Kind.STATS -> statsLong(feed)
+        Kind.DASHBOARD -> headline(feed) ?: statsLong(feed)
+    }
+
+    private fun statsLong(feed: Feed): String {
+        val rows = shownRows(feed)
+        return if (rows.isEmpty()) title(feed)
+        else "${title(feed)}: " + rows.joinToString(" $DOT ") { "${it.label} ${it.value}" }
     }
 
     /** Headline for non-data states (null for fresh/stale). */
