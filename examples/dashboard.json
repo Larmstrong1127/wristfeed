@@ -1,0 +1,17 @@
+{
+  "wristfeed": 1,
+  "title": "Today · Thu",
+  "status": "warn",
+  "kind": "dashboard",
+  "headline": "Review 2 pull requests · 20 min",
+  "alert": {"text": "Deploy failed on main", "status": "bad"},
+  "rows": [
+    {"label": "Streak", "value": "4 wk", "status": "ok"},
+    {"label": "Inbox", "value": "12"},
+    {"label": "On-call", "value": "Fri", "status": "warn"}
+  ],
+  "progress": {"label": "Tasks", "value": 7, "max": 10},
+  "updated": "2026-11-16T06:40:00Z",
+  "stale_after_minutes": 720,
+  "tap_url": null
+}

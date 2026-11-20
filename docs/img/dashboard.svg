@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="454" height="454" viewBox="0 0 454 454" font-family="Roboto, 'Helvetica Neue', Arial, sans-serif">
+<circle cx="227" cy="227" r="227" fill="#000000"/>
+<circle cx="227" cy="227" r="214" fill="none" stroke="#262626" stroke-width="10"/>
+<path d="M 227 13 A 214 214 0 1 1 23.47 293.13" fill="none" stroke="#FFB300" stroke-width="10" stroke-linecap="butt"/>
+<text x="227" y="103.8" font-size="22" font-weight="bold" fill="#9E9E9E" text-anchor="middle" dominant-baseline="central">TODAY · THU</text>
+<text x="227" y="145.4" font-size="34" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">Review 2 pull</text>
+<text x="227" y="186.2" font-size="34" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">requests · 20 min</text>
+<text x="227" y="233" font-size="24" fill="#E53935" text-anchor="middle" dominant-baseline="central">● Deploy failed on main</text>
+<text x="115" y="286.6" font-size="32" font-weight="bold" fill="#4CAF50" text-anchor="middle" dominant-baseline="central">4 wk</text>
+<text x="115" y="316.6" font-size="18" fill="#9E9E9E" text-anchor="middle" dominant-baseline="central">STREAK</text>
+<text x="227" y="286.6" font-size="32" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">12</text>
+<text x="227" y="316.6" font-size="18" fill="#9E9E9E" text-anchor="middle" dominant-baseline="central">INBOX</text>
+<text x="339" y="286.6" font-size="32" font-weight="bold" fill="#FFB300" text-anchor="middle" dominant-baseline="central">Fri</text>
+<text x="339" y="316.6" font-size="18" fill="#9E9E9E" text-anchor="middle" dominant-baseline="central">ON-CALL</text>
+<text x="227" y="351.4" font-size="20" fill="#9E9E9E" text-anchor="middle" dominant-baseline="central">5m ago</text>
+</svg>

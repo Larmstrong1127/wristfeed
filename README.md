@@ -11,13 +11,21 @@
 WristFeed turns any JSON feed URL into a Wear OS tile and watch-face complications. You write a small JSON file from a script, a CI job or a server. You host it anywhere that serves HTTPS. The watch fetches it and shows it.
 
 <p align="center">
+  <img src="docs/img/dashboard.svg" width="160" alt="dashboard tile">
   <img src="docs/img/stats.svg" width="160" alt="stats tile">
   <img src="docs/img/progress.svg" width="160" alt="progress tile">
   <img src="docs/img/message.svg" width="160" alt="message tile">
   <img src="docs/img/stale.svg" width="160" alt="stale tile, dimmed">
   <img src="docs/img/unreachable.svg" width="160" alt="unreachable screen">
 </p>
-<p align="center"><sub>Stats, progress, message, stale (dimmed) and unreachable, rendered by <code>wristfeed preview</code> from <a href="examples/">examples/</a>.</sub></p>
+<p align="center"><sub>Dashboard, stats, progress, message, stale (dimmed) and unreachable, rendered by <code>wristfeed preview</code> from <a href="examples/">examples/</a>.</sub></p>
+
+<p align="center">
+  <img src="docs/device/progress.png" width="160" alt="progress tile on a Galaxy Watch 8">
+  <img src="docs/device/message.png" width="160" alt="message tile on a Galaxy Watch 8">
+  <img src="docs/device/stale.png" width="160" alt="stale tile on a Galaxy Watch 8">
+</p>
+<p align="center"><sub>The same layouts on a real Galaxy Watch 8 (screenshots over <code>adb</code>, example feeds).</sub></p>
 
 ## Why
 

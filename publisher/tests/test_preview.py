@@ -115,7 +115,7 @@ def test_deterministic() -> None:
     assert svg_for(doc) == svg_for(doc)
 
 
-@pytest.mark.parametrize("name", ["ci-status", "job-search", "server-health"])
+@pytest.mark.parametrize("name", ["ci-status", "job-search", "server-health", "dashboard"])
 def test_golden(name: str, tmp_path: Path) -> None:
     out = tmp_path / "out.svg"
     rc = main(["preview", str(EXAMPLES / f"{name}.json"), "--out", str(out), "--now", NOW_ISO])
