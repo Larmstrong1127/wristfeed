@@ -193,17 +193,17 @@ footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wr
 <div class="hero">
   <div class="wrap">
     <h1>Put any feed on <em>your wrist.</em></h1>
-    <p class="lede">WristFeed is an open-source Wear OS app, a tiny JSON format and a Python CLI. Publish a small JSON file anywhere. Your Galaxy or Pixel watch shows it as a tile and a watch-face complication.</p>
+    <p class="lede">WristFeed is an open-source Wear OS app, a tiny JSON format and a Python CLI. Publish a small JSON file anywhere. Your Wear OS watch shows it as a tile. (Watch-face complications are built and waiting for an on-device check.)</p>
     <div class="cta">
       <a class="btn primary" href="#quickstart">Quickstart</a>
       <a class="btn" href="https://github.com/Larmstrong1127/wristfeed/blob/main/SPEC.md">Read the spec</a>
     </div>
     <div class="watches">
-      <div class="watch side l"><img src="img/progress.svg" width="454" height="454" alt="Progress tile: a ring showing Apps 1 of 5"></div>
-      <div class="watch main"><img src="img/stats.svg" width="454" height="454" alt="Stats tile: title JARVIS with three colored rows and an age footer"></div>
-      <div class="watch side r"><img src="img/message.svg" width="454" height="454" alt="Message tile: one short status line"></div>
+      <div class="watch side l"><img src="img/stats.svg" width="454" height="454" alt="Stats tile: three colored rows and an age footer"></div>
+      <div class="watch main"><img src="img/dashboard.svg" width="454" height="454" alt="Dashboard tile: a progress ring around the edge, a two-line headline, a red alert line and three chips"></div>
+      <div class="watch side r"><img src="img/progress.svg" width="454" height="454" alt="Progress tile: a ring showing 3 of 5"></div>
     </div>
-    <p class="caption">Rendered by <code>wristfeed preview</code> from the example feeds. No watch needed.</p>
+    <p class="caption">Rendered by <code>wristfeed preview</code> from the example feeds. No watch needed. <a href="https://github.com/Larmstrong1127/wristfeed#readme">Screenshots from a real Galaxy Watch 8</a> are in the README.</p>
     <p class="status-note"><strong>STATUS v0.1</strong><br>The feed format and the Python publisher work and are tested. The Wear OS app builds and runs on a Galaxy Watch 8 (Wear OS, Android 16); first device run 2026-11-19.</p>
   </div>
 </div>
@@ -245,6 +245,7 @@ footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wr
         <h3>CI status</h3>
         <p>Build, tests and deploy as three colored rows. A GitHub Action republishes the feed after each run.</p>
         <a class="src" href="https://github.com/Larmstrong1127/wristfeed/blob/main/examples/ci-status.json">examples/ci-status.json</a>
+        <a class="src" href="https://github.com/Larmstrong1127/wristfeed/blob/main/examples/github-action-publish.yml">examples/github-action-publish.yml</a>
       </article>
       <article class="case">
         <span class="pill warn">progress</span>
@@ -259,10 +260,10 @@ footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wr
         <a class="src" href="https://github.com/Larmstrong1127/wristfeed/blob/main/examples/server-health.json">examples/server-health.json</a>
       </article>
       <article class="case">
-        <span class="pill idle">yours</span>
+        <span class="pill idle">dashboard</span>
         <h3>Personal dashboards</h3>
-        <p>Habits, goals, a home project. Keep one tile per feed. Never put secrets in a feed: a secret gist is unlisted, not private.</p>
-        <a class="src" href="https://github.com/Larmstrong1127/wristfeed/blob/main/examples/github-action-publish.yml">examples/github-action-publish.yml</a>
+        <p>The one thing to do next, a progress ring around the screen edge, one alert when something needs you, and three small stats. Never put secrets in a feed: a secret gist is unlisted, not private.</p>
+        <a class="src" href="https://github.com/Larmstrong1127/wristfeed/blob/main/examples/dashboard.json">examples/dashboard.json</a>
       </article>
     </div>
   </div>
@@ -281,10 +282,12 @@ footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wr
           <tr><td><code>title</code></td><td>string, required</td><td>Top of the tile, up to 24 characters shown.</td></tr>
           <tr><td><code>updated</code></td><td>RFC 3339, required</td><td>When the data was made. Drives the age footer.</td></tr>
           <tr><td><code>status</code></td><td><code>ok|warn|bad|idle</code></td><td>Accent color. Default <code>idle</code>.</td></tr>
-          <tr><td><code>kind</code></td><td><code>stats|progress|message</code></td><td>Which layout. Default <code>stats</code>.</td></tr>
+          <tr><td><code>kind</code></td><td><code>stats|progress|message|dashboard</code></td><td>Which layout. Default <code>stats</code>. An app that predates <code>dashboard</code> shows <code>stats</code>.</td></tr>
           <tr><td><code>rows</code></td><td>array</td><td>Up to 3 <code>{label, value, status?}</code> rows.</td></tr>
           <tr><td><code>progress</code></td><td>object</td><td><code>{label, value, max}</code>. A ring, and the ranged complication.</td></tr>
           <tr><td><code>message</code></td><td>string or null</td><td>One short line, up to 60 characters shown.</td></tr>
+          <tr><td><code>headline</code></td><td>string or null</td><td>Dashboard: the one thing to know or do next, two lines.</td></tr>
+          <tr><td><code>alert</code></td><td>object or null</td><td>Dashboard: <code>{text, status?}</code>, one line that needs attention.</td></tr>
           <tr><td><code>stale_after_minutes</code></td><td>integer</td><td>When the tile shows "Old data". Default 360.</td></tr>
           <tr><td><code>tap_url</code></td><td>https URL or null</td><td>Opened on the phone when you tap the tile.</td></tr>
         </tbody>

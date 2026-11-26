@@ -8,7 +8,7 @@
 
 > **Status: v0.1.** The feed format and the Python publisher are working. The Wear OS app builds and runs on a Galaxy Watch 8 (Wear OS, Android 16); first device run 2026-11-19.
 
-WristFeed turns any JSON feed URL into a Wear OS tile and watch-face complications. You write a small JSON file from a script, a CI job or a server. You host it anywhere that serves HTTPS. The watch fetches it and shows it.
+WristFeed turns any JSON feed URL into a Wear OS tile (watch-face complications are built and waiting for an on-device check). You write a small JSON file from a script, a CI job or a server. You host it anywhere that serves HTTPS. The watch fetches it and shows it.
 
 <p align="center">
   <img src="docs/img/dashboard.svg" width="160" alt="dashboard tile">
@@ -120,7 +120,7 @@ See [examples/](examples/) for three ready feeds and a scheduled GitHub Action.
 
 | Project | Data source | Install | Layouts | License |
 |---|---|---|---|---|
-| **WristFeed** | Any JSON URL | Watch app only | Stats, progress ring, message; 3 complication types | MIT |
+| **WristFeed** | Any JSON URL | Watch app only | Dashboard, stats, progress ring, message; 3 complication types (not yet checked on a device) | MIT |
 | [Wrist-Usage](https://github.com/Whyater/Wrist-Usage) | Claude/Codex usage limits via secret gist | Mac collector + phone app + watch app | Usage tile and complication | MIT |
 | [compose-wear-tiles](https://github.com/halilozel1903/compose-wear-tiles) | Whatever you code | A library you build into your app | Stats, progress, message tiles | MIT |
 | [Complications Suite](https://github.com/amoledwatchfaces/Complications-Suite-Wear-OS) | 42 built-in sources (custom text, goal, countdown, BTC) | Watch app | Complications | GPL-3.0 |

@@ -1,0 +1,46 @@
+name: release
+
+# Push a tag like v0.1.0: CI runs the full test suites, builds the APK and attaches it to a
+# GitHub release. The APK is a debug-signed preview build (no release keystore in the repo);
+# install it with `adb install`. Release notes come from docs/releases/<tag>.md.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Publisher tests
+        working-directory: publisher
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pytest ruff
+          ruff check .
+          pytest -q
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: App tests and APK
+        working-directory: android
+        run: ./gradlew test assembleDebug --console=plain
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk "wristfeed-${GITHUB_REF_NAME}-debug.apk"
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="docs/releases/${GITHUB_REF_NAME}.md"
+          test -f "$notes" || { echo "missing $notes"; exit 1; }
+          gh release create "$GITHUB_REF_NAME" "wristfeed-${GITHUB_REF_NAME}-debug.apk" \
+            --title "WristFeed ${GITHUB_REF_NAME}" --notes-file "$notes" --prerelease
